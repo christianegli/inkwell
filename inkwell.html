@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Inkwell">
+<meta name="theme-color" content="#0f1523">
+<title>Inkwell</title>
+<style>
+:root{
+  --sb:#0f1523;--sb2:#1a2235;--sb3:#243045;--sb4:#2d3f5a;
+  --sbt:#94a3b8;--sbt2:#64748b;--sbt3:#475569;
+  --bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;
+  --fg:#1e293b;--fg2:#64748b;--fg3:#cbd5e1;
+  --accent:#7c3aed;--accent2:#a78bfa;--accent3:#ede9fe;
+  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;--orange:#f97316;
+  --border:#e2e8f0;
+  --font:'iA Writer Quattro','Courier Prime','Courier New',Georgia,serif;
+  --sz:19px;--lh:1.85;
+  --topbar:48px;--sbw:260px;
+}
+[data-theme=dark]{
+  --bg:#0d0f17;--bg2:#111827;--bg3:#1e2537;
+  --fg:#e2e8f0;--fg2:#94a3b8;--fg3:#475569;
+  --border:#1e2537;--accent3:#2d1f5e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);font-size:14px;color:var(--fg);background:var(--bg);display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+#topbar{
+  height:var(--topbar);background:var(--sb);display:flex;align-items:center;
+  gap:0;padding:0 16px;flex-shrink:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.06)
+}
+#logo{color:#fff;font-size:15px;font-weight:700;letter-spacing:.04em;margin-right:20px;white-space:nowrap}
+#logo span{color:var(--accent2)}
+.ws-btn{
+  background:none;border:none;color:var(--sbt2);cursor:pointer;
+  padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;font-family:var(--font);
+  transition:all .15s;white-space:nowrap
+}
+.ws-btn:hover{color:var(--sbt);background:var(--sb3)}
+.ws-btn.active{color:#fff;background:var(--accent)}
+#topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+#proj-name{color:var(--sbt);font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-btn{background:none;border:none;color:var(--sbt2);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:5px;transition:color .15s}
+.tb-btn:hover{color:#fff}
+#wordcount-badge{font-size:11px;color:var(--sbt2);padding:3px 9px;background:var(--sb2);border-radius:12px;border:1px solid var(--sb3)}
+
+/* ── MAIN LAYOUT ── */
+#app{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sbw);background:var(--sb);color:var(--sbt);
+  display:flex;flex-direction:column;flex-shrink:0;
+  border-right:1px solid rgba(255,255,255,.06);overflow:hidden
+}
+#sb-head{
+  padding:14px 16px 10px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--sbt3);
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0
+}
+.sb-add{background:none;border:none;color:var(--sbt3);cursor:pointer;font-size:18px;line-height:1;padding:0 4px;border-radius:4px}
+.sb-add:hover{color:#fff;background:var(--sb3)}
+#sb-body{flex:1;overflow-y:auto;padding:4px 8px 16px}
+.sb-item{
+  display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;
+  cursor:pointer;color:var(--sbt);font-size:13px;transition:all .12s;
+  white-space:nowrap;overflow:hidden
+}
+.sb-item:hover{background:var(--sb2);color:#fff}
+.sb-item.active{background:var(--sb3);color:#fff}
+.sb-item.scene{padding-left:32px;font-size:12px;color:var(--sbt2)}
+.sb-item.chapter{padding-left:20px;font-size:12px}
+.sb-item.act{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--sbt3);padding:8px 8px 3px;cursor:default}
+.sb-item.act:hover{background:none;color:var(--sbt3)}
+.sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sb-arrow{font-size:9px;color:var(--sbt3);transition:transform .15s;margin-right:2px}
+.sb-arrow.open{transform:rotate(90deg)}
+.sb-wc{font-size:10px;color:var(--sbt3);margin-left:auto}
+.sb-status{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-left:auto}
+
+/* ── MAIN CONTENT ── */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
+
+/* ── WORKSPACES ── */
+.workspace{display:none;flex:1;overflow:hidden;flex-direction:column}
+.workspace.active{display:flex}
+
+/* ── IDEA BOARD ── */
+#ws-idea{position:relative}
+#idea-canvas{flex:1;position:relative;overflow:hidden;background:var(--bg2);cursor:default}
+[data-theme=dark] #idea-canvas{background:#0a0c14}
+#idea-toolbar{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--sb);border-radius:10px;padding:8px 14px;
+  display:flex;gap:8px;align-items:center;z-index:50;
+  box-shadow:0 4px 20px rgba(0,0,0,.3)
+}
+.cat-btn{background:none;border:2px solid transparent;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .15s}
+.cat-btn.active{border-color:currentColor}
+.sticky{
+  position:absolute;min-width:160px;min-height:80px;padding:12px;border-radius:8px;
+  font-size:13px;line-height:1.5;cursor:grab;user-select:none;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);resize:both;overflow:auto;
+  font-family:var(--font);border:1px solid rgba(0,0,0,.08)
+}
+.sticky:active{cursor:grabbing}
+.sticky.editing{cursor:text;resize:both}
+.sticky-del{
+  position:absolute;top:4px;right:4px;background:rgba(0,0,0,.15);
+  border:none;border-radius:4px;color:rgba(0,0,0,.5);cursor:pointer;
+  font-size:11px;padding:1px 5px;display:none
+}
+.sticky:hover .sticky-del{display:block}
+.sticky-cat{position:absolute;bottom:4px;left:8px;font-size:9px;opacity:.5;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+
+/* ── OUTLINE ── */
+#ws-outline{flex-direction:row}
+#outline-tree{width:300px;border-right:1px solid var(--border);overflow-y:auto;padding:12px 8px;flex-shrink:0;background:var(--bg)}
+#outline-detail{flex:1;overflow-y:auto;padding:28px 32px;max-width:680px}
+#outline-arc{border-top:1px solid var(--border);padding:16px 20px;flex-shrink:0;background:var(--bg2);height:80px}
+.outline-act{margin-bottom:4px}
+.outline-act-head{
+  display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;
+  cursor:pointer;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--fg2);transition:background .1s
+}
+.outline-act-head:hover{background:var(--bg3)}
+.outline-ch{margin-left:10px;margin-bottom:2px}
+.outline-ch-head{
+  display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:5px;
+  cursor:pointer;font-size:12px;font-weight:600;color:var(--fg);transition:background .1s
+}
+.outline-ch-head:hover{background:var(--bg3)}
+.outline-sc{
+  margin-left:18px;padding:4px 8px;border-radius:5px;cursor:pointer;
+  font-size:12px;color:var(--fg2);display:flex;align-items:center;gap:6px;transition:background .1s
+}
+.outline-sc:hover{background:var(--bg3)}
+.outline-sc.sel{background:var(--accent3);color:var(--accent)}
+.sc-status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.od-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2);font-weight:700;margin-bottom:5px;display:block}
+.od-input{width:100%;background:transparent;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:var(--font);font-size:13px;color:var(--fg);outline:none;transition:border-color .15s;display:block;margin-bottom:14px;resize:vertical}
+.od-input:focus{border-color:var(--accent)}
+.od-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.intensity-bar{display:flex;gap:3px;align-items:center;margin-bottom:14px}
+.int-dot{width:20px;height:20px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:all .12s}
+.int-dot.on{background:var(--accent);border-color:var(--accent)}
+.status-sel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ss-opt{padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .12s}
+.add-btn{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:600;transition:opacity .15s}
+.add-btn:hover{opacity:.85}
+.add-btn.ghost{background:transparent;color:var(--fg2);border:1px solid var(--border)}
+.add-btn.ghost:hover{background:var(--bg3);opacity:1}
+
+/* ── CODEX ── */
+#ws-codex{flex-direction:column}
+#codex-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 20px;flex-shrink:0;background:var(--bg)}
+.cx-tab{background:none;border:none;border-bottom:2px solid transparent;padding:12px 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--fg2);cursor:pointer;font-family:var(--font);transition:all .15s;margin-bottom:-1px}
+.cx-tab:hover{color:var(--fg)}
+.cx-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.cx-panel{display:none;flex:1;overflow-y:auto;padding:24px}
+.cx-panel.active{display:block}
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.char-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .15s;position:relative}
+.char-card:hover{border-color:var(--accent2);box-shadow:0 2px 12px rgba(124,58,237,.1)}
+.char-name{font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.char-role{font-size:11px;color:var(--fg2);margin-bottom:8px}
+.char-arc{font-size:12px;color:var(--fg2);line-height:1.5}
+.char-color{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.cx-form{max-width:560px}
+.cx-form textarea{min-height:80px}
+.loc-list .loc-item{padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.loc-item:hover .loc-name{color:var(--accent)}
+.loc-name{font-size:14px;font-weight:600;color:var(--fg);margin-bottom:4px}
+.loc-desc{font-size:13px;color:var(--fg2);line-height:1.5}
+.tl-line{position:relative;padding-left:28px;margin-bottom:0}
+.tl-line::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-event{position:relative;padding:12px 0 12px 8px;border-bottom:1px solid rgba(0,0,0,.04)}
+.tl-event::before{content:'';position:absolute;left:-24px;top:18px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.tl-date{font-size:11px;color:var(--fg2);margin-bottom:3px;font-weight:700}
+.tl-text{font-size:13px;color:var(--fg);line-height:1.5}
+.char-pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;margin-right:4px;margin-top:4px}
+
+/* ── WRITE ── */
+#ws-write{flex-direction:row}
+#write-sidebar{width:240px;border-right:1px solid var(--border);overflow-y:auto;padding:8px;flex-shrink:0;background:var(--bg)}
+#write-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#write-meta{
+  padding:10px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;flex-shrink:0;background:var(--bg);
+  font-size:11px;color:var(--fg2)
+}
+.wm-item{display:flex;align-items:center;gap:5px}
+.wm-val{font-weight:600;color:var(--fg)}
+#write-editor{flex:1;overflow:hidden;position:relative}
+#we-col{max-width:680px;margin:0 auto;padding:40px 24px 120px;position:relative;height:100%;overflow:auto}
+#we-title{
+  font-size:1.4em;font-weight:700;color:var(--fg);border:none;outline:none;
+  background:transparent;width:100%;font-family:var(--font);margin-bottom:16px;
+  line-height:1.3
+}
+#we-ta,#we-ov{
+  font-family:var(--font);font-size:var(--sz);line-height:var(--lh);
+  white-space:pre-wrap;word-wrap:break-word;width:100%;
+  padding:0;border:none;outline:none;background:transparent;display:block
+}
+#we-ta{color:transparent;caret-color:var(--fg);resize:none;overflow:hidden;position:relative;z-index:2;min-height:400px;-webkit-font-smoothing:antialiased}
+#we-ta::selection{background:rgba(124,58,237,.2)}
+#we-ov{position:absolute;top:40px;left:24px;right:24px;color:var(--fg);pointer-events:none;z-index:1}
+#we-beat{
+  border:1px solid var(--border);border-radius:8px;padding:12px 16px;
+  margin-bottom:20px;background:var(--bg2);font-size:12px
+}
+#we-beat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#we-beat-head span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2)}
+.beat-row{display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:4px;align-items:start}
+.beat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2)}
+.beat-val{font-size:12px;color:var(--fg);line-height:1.45}
+#write-footer{
+  position:absolute;bottom:0;left:0;right:0;padding:10px max(20px,calc((100% - 680px)/2));
+  display:flex;align-items:center;gap:16px;font-size:11px;color:var(--fg2);
+  background:linear-gradient(transparent,var(--bg));pointer-events:none;
+}
+#wf-session{pointer-events:auto}
+.we-nav-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--fg2);cursor:pointer;font-size:11px;padding:3px 10px;font-family:var(--font);pointer-events:auto;transition:all .15s}
+.we-nav-btn:hover{border-color:var(--accent);color:var(--accent)}
+.dim{opacity:.15;transition:opacity .3s ease}
+
+/* ── EDIT ── */
+#ws-edit{flex-direction:column}
+#edit-toolbar{
+  padding:10px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg)
+}
+#edit-search{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-family:var(--font);font-size:13px;color:var(--fg);outline:none;width:200px;transition:border-color .15s}
+#edit-search:focus{border-color:var(--accent)}
+#edit-replace{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-family:var(--font);font-size:13px;color:var(--fg);outline:none;width:180px;transition:border-color .15s}
+#edit-replace:focus{border-color:var(--accent)}
+#edit-body{flex:1;overflow-y:auto;padding:32px max(20px,calc((100% - 720px)/2))}
+.edit-chapter{margin-bottom:40px}
+.edit-ch-head{
+  display:flex;align-items:center;gap:12px;margin-bottom:16px;
+  padding-bottom:10px;border-bottom:2px solid var(--border)
+}
+.edit-ch-title{font-size:16px;font-weight:700;color:var(--fg)}
+.edit-ch-prog{font-size:11px;color:var(--fg2)}
+.edit-scene{margin-bottom:24px}
+.edit-sc-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--fg2);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.edit-sc-body{font-family:var(--font);font-size:var(--sz);line-height:var(--lh);color:var(--fg);white-space:pre-wrap;word-wrap:break-word}
+.edit-sc-body mark{background:rgba(245,158,11,.25);border-radius:2px}
+
+/* ── MODALS ── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(5px);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding-top:80px;opacity:0;pointer-events:none;transition:opacity .15s}
+.mo.open{opacity:1;pointer-events:auto}
+.mbox{background:var(--bg);border:1px solid var(--border);border-radius:12px;width:520px;max-width:calc(100vw - 40px);max-height:80vh;overflow-y:auto;padding:28px;transform:translateY(-8px);transition:transform .15s;box-shadow:0 8px 40px rgba(0,0,0,.15)}
+.mo.open .mbox{transform:translateY(0)}
+.mo-title{font-size:15px;font-weight:700;color:var(--fg);margin-bottom:20px}
+.fi{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--fg);outline:none;transition:border-color .15s;display:block;margin-bottom:12px}
+.fi:focus{border-color:var(--accent)}
+select.fi{cursor:pointer}
+label.fl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2);display:block;margin-bottom:4px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-g{background:var(--bg2);color:var(--fg2);border:1px solid var(--border)}
+.btn-g:hover{opacity:1;background:var(--bg3)}
+.btn-row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cp-dot{width:22px;height:22px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s}
+.cp-dot.sel{border-color:var(--fg)}
+
+/* ── CMD PALETTE ── */
+#cmd-mo{padding-top:100px}
+#cmd-box{width:460px;padding:0;overflow:hidden}
+#cmd-in{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);padding:14px 18px;font-family:var(--font);font-size:16px;color:var(--fg);outline:none;display:block}
+#cmd-list{max-height:340px;overflow-y:auto;padding:6px}
+.ci{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:7px;cursor:pointer;transition:background .1s}
+.ci:hover,.ci.sel{background:var(--bg3)}
+.ci-l{font-size:13px;color:var(--fg)}
+.ci-k{font-size:10px;color:var(--fg2);font-family:monospace;background:var(--bg3);padding:2px 6px;border-radius:3px}
+
+/* ── PROJECT WIZARD ── */
+#wizard-mo .mbox{width:560px}
+.wz-step{display:none}
+.wz-step.active{display:block}
+.wz-step-num{font-size:11px;color:var(--fg2);margin-bottom:16px}
+.beat-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.beat-opt{border:2px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .15s;text-align:center}
+.beat-opt:hover{border-color:var(--accent2)}
+.beat-opt.sel{border-color:var(--accent);background:var(--accent3)}
+.beat-opt-name{font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px}
+.beat-opt-desc{font-size:11px;color:var(--fg2)}
+
+/* ── STATS PANEL ── */
+#stats-panel{position:fixed;top:var(--topbar);right:-320px;width:300px;height:calc(100vh - var(--topbar));background:var(--bg);border-left:1px solid var(--border);padding:22px 18px;overflow-y:auto;z-index:200;transition:right .25s ease;font-size:13px}
+#stats-panel.open{right:0}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.stat-label{font-size:12px;color:var(--fg2)}
+.stat-val{font-size:14px;font-weight:700;color:var(--fg)}
+.prog-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:3px 0 12px}
+.prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .5s ease}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--sb);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:2000;white-space:nowrap}
+#toast.on{opacity:1}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:transparent;border-radius:2px}
+*:hover::-webkit-scrollbar-thumb{background:var(--fg3)}
+
+/* ── MISC ── */
+.sep{height:1px;background:var(--border);margin:10px 0}
+.empty-state{text-align:center;padding:60px 20px;color:var(--fg2)}
+.empty-state h3{font-size:16px;color:var(--fg);margin-bottom:8px}
+.empty-state p{font-size:13px;line-height:1.6;margin-bottom:20px}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-right:4px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="logo">Ink<span>well</span></div>
+  <button class="ws-btn active" data-ws="idea"    onclick="switchWS('idea')">Ideas</button>
+  <button class="ws-btn"        data-ws="outline" onclick="switchWS('outline')">Outline</button>
+  <button class="ws-btn"        data-ws="codex"   onclick="switchWS('codex')">Codex</button>
+  <button class="ws-btn"        data-ws="write"   onclick="switchWS('write')">Write</button>
+  <button class="ws-btn"        data-ws="edit"    onclick="switchWS('edit')">Edit</button>
+  <div id="topbar-right">
+    <span id="wordcount-badge">0 / 0 words</span>
+    <span id="proj-name">Untitled Project</span>
+    <button class="tb-btn" onclick="openStats()" title="Stats">📊</button>
+    <button class="tb-btn" onclick="toggleDark()" title="Theme">◐</button>
+    <button class="tb-btn" onclick="syncToGH()" title="Sync to GitHub (⌘⇧S)">↑</button>
+    <button class="tb-btn" onclick="openSettings()" title="Settings">⚙</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sb-head">
+      <span id="sb-label">Ideas</span>
+      <button class="sb-add" id="sb-add-btn" onclick="sbAddAction()" title="Add">+</button>
+    </div>
+    <div id="sb-body"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- ── IDEA BOARD ── -->
+    <div class="workspace active" id="ws-idea">
+      <div id="idea-canvas" onclick="canvasClick(event)" ondragover="event.preventDefault()">
+        <div id="idea-grid"></div>
+      </div>
+      <div id="idea-toolbar">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--sbt2);margin-right:4px">Filter</span>
+        <button class="cat-btn active" data-cat="all" style="color:var(--sbt)" onclick="filterIdeas('all')">All</button>
+        <button class="cat-btn" data-cat="premise" style="color:#a78bfa" onclick="filterIdeas('premise')">Premise</button>
+        <button class="cat-btn" data-cat="character" style="color:#60a5fa" onclick="filterIdeas('character')">Character</button>
+        <button class="cat-btn" data-cat="scene" style="color:#34d399" onclick="filterIdeas('scene')">Scene</button>
+        <button class="cat-btn" data-cat="conflict" style="color:#f87171" onclick="filterIdeas('conflict')">Conflict</button>
+        <button class="cat-btn" data-cat="theme" style="color:#fbbf24" onclick="filterIdeas('theme')">Theme</button>
+        <button class="cat-btn" data-cat="research" style="color:#fb923c" onclick="filterIdeas('research')">Research</button>
+        <div style="width:1px;height:16px;background:var(--sb3);margin:0 6px"></div>
+        <button class="cat-btn" style="color:var(--sbt)" onclick="clearCanvas()">Clear</button>
+      </div>
+    </div>
+
+    <!-- ── OUTLINE ── -->
+    <div class="workspace" id="ws-outline">
+      <div id="outline-tree">
+        <div style="padding:8px 8px 4px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2)">Structure</span>
+          <button class="add-btn" style="font-size:11px;padding:4px 10px" onclick="addAct()">+ Act</button>
+        </div>
+        <div id="outline-list"></div>
+        <div id="arc-container" style="margin-top:12px;padding:0 8px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2);margin-bottom:6px">Story Arc</div>
+          <div id="arc-chart" style="display:flex;align-items:flex-end;gap:2px;height:48px;padding:0 2px"></div>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+        <div id="outline-detail" style="flex:1">
+          <div id="outline-empty" class="empty-state">
+            <h3>Select a scene</h3>
+            <p>Click any scene in the outline to edit its details — POV, goal, conflict, outcome and intensity.</p>
+          </div>
+          <div id="outline-form" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CODEX ── -->
+    <div class="workspace" id="ws-codex">
+      <div id="codex-tabs">
+        <button class="cx-tab active" data-cx="chars"    onclick="switchCX('chars')">Characters</button>
+        <button class="cx-tab"        data-cx="locs"     onclick="switchCX('locs')">Locations</button>
+        <button class="cx-tab"        data-cx="timeline" onclick="switchCX('timeline')">Timeline</button>
+        <button class="cx-tab"        data-cx="themes"   onclick="switchCX('themes')">Themes</button>
+      </div>
+      <div class="cx-panel active" id="cx-chars"><div id="cx-chars-body"></div></div>
+      <div class="cx-panel"        id="cx-locs"><div id="cx-locs-body"></div></div>
+      <div class="cx-panel"        id="cx-timeline"><div id="cx-timeline-body"></div></div>
+      <div class="cx-panel"        id="cx-themes"><div id="cx-themes-body"></div></div>
+    </div>
+
+    <!-- ── WRITE ── -->
+    <div class="workspace" id="ws-write">
+      <div id="write-sidebar">
+        <div style="padding:8px 4px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2);margin-bottom:4px">Scenes</div>
+        <div id="write-scene-list"></div>
+      </div>
+      <div id="write-main">
+        <div id="write-meta">
+          <div class="wm-item">POV: <span class="wm-val" id="wm-pov">—</span></div>
+          <div class="wm-item">Scene: <span class="wm-val" id="wm-sc">—</span></div>
+          <div class="wm-item" id="wm-wc-wrap">Words: <span class="wm-val" id="wm-wc">0</span><span id="wm-target" style="color:var(--fg2)"></span></div>
+          <div class="wm-item" id="wm-sess">Session: <span class="wm-val" id="wm-sess-wc">0</span></div>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="we-nav-btn" onclick="prevScene()">↑ Prev</button>
+            <button class="we-nav-btn" onclick="nextScene()">↓ Next</button>
+          </div>
+        </div>
+        <div id="write-editor">
+          <div id="we-col">
+            <div id="we-beat" style="display:none">
+              <div id="we-beat-head">
+                <span>Beat Check</span>
+                <button onclick="document.getElementById('we-beat').style.display='none'" style="background:none;border:none;color:var(--fg2);cursor:pointer;font-size:14px">✕</button>
+              </div>
+              <div class="beat-row"><span class="beat-label">Goal</span><span class="beat-val" id="wb-goal">—</span></div>
+              <div class="beat-row"><span class="beat-label">Conflict</span><span class="beat-val" id="wb-conflict">—</span></div>
+              <div class="beat-row"><span class="beat-label">Outcome</span><span class="beat-val" id="wb-outcome">—</span></div>
+            </div>
+            <input id="we-title" placeholder="Scene title…" oninput="sceneMetaChange()">
+            <div style="position:relative">
+              <div id="we-ov" aria-hidden="true"></div>
+              <textarea id="we-ta" placeholder="Write this scene…" autocomplete="off" autocorrect="on" spellcheck="true"></textarea>
+            </div>
+          </div>
+          <div id="write-footer">
+            <span id="wf-session"></span>
+            <span style="margin-left:auto;color:var(--fg2)" id="wf-total"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EDIT ── -->
+    <div class="workspace" id="ws-edit">
+      <div id="edit-toolbar">
+        <input id="edit-search" placeholder="Find…" oninput="doSearch()" autocomplete="off">
+        <input id="edit-replace" placeholder="Replace with…" autocomplete="off">
+        <button class="add-btn" style="font-size:12px;padding:5px 12px" onclick="doReplace()">Replace all</button>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="add-btn ghost" onclick="exportMD()">↓ .md</button>
+          <button class="add-btn ghost" onclick="exportHTML()">↓ .html</button>
+          <button class="add-btn ghost" onclick="copyAll()">Copy all</button>
+        </div>
+      </div>
+      <div id="edit-body"></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- STATS PANEL -->
+<div id="stats-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2)">Project Stats</span>
+    <button onclick="document.getElementById('stats-panel').classList.remove('open')" style="background:none;border:none;color:var(--fg2);cursor:pointer;font-size:16px">✕</button>
+  </div>
+  <div id="stats-body"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CMD PALETTE -->
+<div class="mo" id="cmd-mo" onclick="if(event.target===this)closeMo('cmd-mo')">
+  <div class="mbox" id="cmd-box">
+    <input id="cmd-in" placeholder="Search commands…" oninput="filterCmds()" onkeydown="cmdKey(event)" autocomplete="off">
+    <div id="cmd-list"></div>
+  </div>
+</div>
+
+<!-- SCENE MODAL (add/edit) -->
+<div class="mo" id="scene-mo" onclick="if(event.target===this)closeMo('scene-mo')">
+  <div class="mbox">
+    <div class="mo-title" id="scene-mo-title">Add Scene</div>
+    <label class="fl">Title</label>
+    <input class="fi" id="sc-title" placeholder="Scene title">
+    <label class="fl">Status</label>
+    <select class="fi" id="sc-status">
+      <option value="not-started">Not Started</option>
+      <option value="drafting">Drafting</option>
+      <option value="drafted">Drafted</option>
+      <option value="revised">Revised</option>
+      <option value="final">Final</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn" onclick="saveSceneMo()">Save</button>
+      <button class="btn btn-g" onclick="closeMo('scene-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHARACTER MODAL -->
+<div class="mo" id="char-mo" onclick="if(event.target===this)closeMo('char-mo')">
+  <div class="mbox">
+    <div class="mo-title" id="char-mo-title">Add Character</div>
+    <label class="fl">Name</label>
+    <input class="fi" id="ch-name" placeholder="Character name">
+    <label class="fl">Role</label>
+    <input class="fi" id="ch-role" placeholder="Protagonist / Antagonist / Supporting…">
+    <label class="fl">Arc</label>
+    <input class="fi" id="ch-arc" placeholder="Brief arc summary">
+    <label class="fl">Traits</label>
+    <input class="fi" id="ch-traits" placeholder="Curious, stubborn, witty…">
+    <label class="fl">Notes</label>
+    <textarea class="fi" id="ch-notes" rows="3" placeholder="Background, motivations, secrets…"></textarea>
+    <label class="fl">Color</label>
+    <div class="color-picker" id="char-colors"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="saveCharMo()">Save</button>
+      <button class="btn btn-g" onclick="closeMo('char-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOCATION MODAL -->
+<div class="mo" id="loc-mo" onclick="if(event.target===this)closeMo('loc-mo')">
+  <div class="mbox">
+    <div class="mo-title">Add Location</div>
+    <label class="fl">Name</label>
+    <input class="fi" id="lo-name" placeholder="Location name">
+    <label class="fl">Description</label>
+    <textarea class="fi" id="lo-desc" rows="3" placeholder="What does this place look, feel, smell like?"></textarea>
+    <label class="fl">Notes</label>
+    <textarea class="fi" id="lo-notes" rows="2" placeholder="History, significance, scenes set here…"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="saveLocMo()">Save</button>
+      <button class="btn btn-g" onclick="closeMo('loc-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE EVENT MODAL -->
+<div class="mo" id="tl-mo" onclick="if(event.target===this)closeMo('tl-mo')">
+  <div class="mbox">
+    <div class="mo-title">Add Timeline Event</div>
+    <label class="fl">Date / Time</label>
+    <input class="fi" id="tl-date" placeholder="e.g. Day 1, Year 1820, Chapter 3…">
+    <label class="fl">Event</label>
+    <textarea class="fi" id="tl-event" rows="2" placeholder="What happens?"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="saveTlMo()">Save</button>
+      <button class="btn btn-g" onclick="closeMo('tl-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- THEME MODAL -->
+<div class="mo" id="theme-mo" onclick="if(event.target===this)closeMo('theme-mo')">
+  <div class="mbox">
+    <div class="mo-title">Add Theme</div>
+    <label class="fl">Theme name</label>
+    <input class="fi" id="th-name" placeholder="e.g. Identity, Power, Belonging…">
+    <label class="fl">Description</label>
+    <textarea class="fi" id="th-desc" rows="3" placeholder="How does this theme manifest in the story?"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="saveThemeMo()">Save</button>
+      <button class="btn btn-g" onclick="closeMo('theme-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="mo" id="settings-mo" onclick="if(event.target===this)closeMo('settings-mo')">
+  <div class="mbox">
+    <div class="mo-title">Settings</div>
+    <label class="fl">GitHub Token</label>
+    <input class="fi" id="cfg-gh-tok" type="password" placeholder="ghp_…">
+    <label class="fl">Repository (owner/repo)</label>
+    <input class="fi" id="cfg-gh-repo" placeholder="username/my-novel">
+    <label class="fl">File path</label>
+    <input class="fi" id="cfg-gh-path" placeholder="manuscript.json">
+    <label class="fl">Branch</label>
+    <input class="fi" id="cfg-gh-branch" placeholder="main">
+    <div class="btn-row">
+      <button class="btn" onclick="saveSettingsMo()">Save</button>
+      <button class="btn btn-g" onclick="closeMo('settings-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT WIZARD -->
+<div class="mo" id="wizard-mo">
+  <div class="mbox" style="width:560px">
+    <div class="mo-title">New Project</div>
+    <!-- Step 1 -->
+    <div class="wz-step active" id="wz-1">
+      <div class="wz-step-num">Step 1 of 3 — The Basics</div>
+      <label class="fl">Title</label>
+      <input class="fi" id="wz-title" placeholder="What's your book called?">
+      <label class="fl">Genre</label>
+      <select class="fi" id="wz-genre">
+        <option>Literary Fiction</option><option>Thriller</option><option>Mystery</option>
+        <option>Romance</option><option>Science Fiction</option><option>Fantasy</option>
+        <option>Historical Fiction</option><option>Non-Fiction</option><option>Memoir</option><option>Other</option>
+      </select>
+      <label class="fl">Target word count</label>
+      <select class="fi" id="wz-target">
+        <option value="20000">Short story (~20,000)</option>
+        <option value="50000">Novella (~50,000)</option>
+        <option value="80000" selected>Novel (~80,000)</option>
+        <option value="100000">Long novel (~100,000)</option>
+        <option value="120000">Epic (~120,000+)</option>
+      </select>
+      <div class="btn-row">
+        <button class="btn" onclick="wzNext(1)">Next →</button>
+      </div>
+    </div>
+    <!-- Step 2 -->
+    <div class="wz-step" id="wz-2">
+      <div class="wz-step-num">Step 2 of 3 — The Premise</div>
+      <label class="fl">One-line premise</label>
+      <input class="fi" id="wz-premise" placeholder="A [protagonist] must [goal] or [stakes].">
+      <label class="fl">What's the core conflict?</label>
+      <textarea class="fi" id="wz-conflict" rows="3" placeholder="What stands in the way? What does your protagonist fear or need?"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-g" onclick="wzBack(2)">← Back</button>
+        <button class="btn" onclick="wzNext(2)">Next →</button>
+      </div>
+    </div>
+    <!-- Step 3 -->
+    <div class="wz-step" id="wz-3">
+      <div class="wz-step-num">Step 3 of 3 — Story Structure</div>
+      <label class="fl">Beat sheet template</label>
+      <div class="beat-choice">
+        <div class="beat-opt sel" data-beat="three-act" onclick="selBeat(this)">
+          <div class="beat-opt-name">Three Act</div>
+          <div class="beat-opt-desc">Setup · Confrontation · Resolution</div>
+        </div>
+        <div class="beat-opt" data-beat="save-the-cat" onclick="selBeat(this)">
+          <div class="beat-opt-name">Save the Cat</div>
+          <div class="beat-opt-desc">15 story beats by Blake Snyder</div>
+        </div>
+        <div class="beat-opt" data-beat="hero" onclick="selBeat(this)">
+          <div class="beat-opt-name">Hero's Journey</div>
+          <div class="beat-opt-desc">Campbell's monomyth</div>
+        </div>
+        <div class="beat-opt" data-beat="blank" onclick="selBeat(this)">
+          <div class="beat-opt-name">Blank Canvas</div>
+          <div class="beat-opt-desc">Start from scratch</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-g" onclick="wzBack(3)">← Back</button>
+        <button class="btn" onclick="wzFinish()">Create Project →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IDEA MODAL -->
+<div class="mo" id="idea-mo" onclick="if(event.target===this)closeMo('idea-mo')">
+  <div class="mbox" style="width:420px">
+    <div class="mo-title">New Idea</div>
+    <label class="fl">Category</label>
+    <select class="fi" id="idea-cat">
+      <option value="premise">Premise</option>
+      <option value="character">Character</option>
+      <option value="scene">Scene</option>
+      <option value="conflict">Conflict</option>
+      <option value="theme">Theme</option>
+      <option value="research">Research</option>
+    </select>
+    <label class="fl">Note</label>
+    <textarea class="fi" id="idea-text" rows="4" placeholder="What's the idea?"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="saveIdeaMo()">Add to board</button>
+      <button class="btn btn-g" onclick="closeMo('idea-mo')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ── DATA MODEL ── */
+const BLANK_PROJECT = () => ({
+  id:'proj_'+Date.now(),
+  title:'Untitled Project',
+  premise:'',genre:'Literary Fiction',targetWords:80000,
+  beatSheet:'three-act',
+  ideas:[],
+  outline:{acts:[]},
+  codex:{characters:[],locations:[],timeline:[],themes:[]},
+  scenes:{},
+  settings:{ghTok:'',ghRepo:'',ghPath:'manuscript.json',ghBranch:'main',dark:false}
+});
+
+let P = null; // current project
+let _ws = 'idea'; // current workspace
+let _selScene = null; // selected scene id
+let _selOutlineScene = null;
+let _cmdItems = [], _cmdIdx = 0;
+let _sessionWords = 0, _sessionStart = Date.now();
+let _dirty = false;
+let _focusMode = false;
+let _twTimer = null;
+let _beatChoice = 'three-act';
+let _ideaFilter = 'all';
+let _dragSticky = null, _dragOffX = 0, _dragOffY = 0;
+let _lastWC = 0;
+
+/* ── BOOT ── */
+function boot() {
+  loadProject();
+  if (!P) { openWizard(); return; }
+  applyTheme();
+  renderAll();
+  setupEditor();
+  setInterval(() => { if (_dirty) save(true); }, 30000);
+}
+
+function loadProject() {
+  try { P = JSON.parse(localStorage.getItem('inkwell_project') || 'null'); } catch(e) { P = null; }
+  // migrations
+  if (P) {
+    if (!P.codex) P.codex = {characters:[],locations:[],timeline:[],themes:[]};
+    if (!P.scenes) P.scenes = {};
+    if (!P.ideas) P.ideas = [];
+    if (!P.outline) P.outline = {acts:[]};
+    if (!P.settings) P.settings = {};
+  }
+}
+
+function save(silent) {
+  if (!P) return;
+  // sync scene content from editor if write tab active
+  if (_ws === 'write' && _selScene) {
+    const ta = document.getElementById('we-ta');
+    const ti = document.getElementById('we-title');
+    if (!P.scenes[_selScene]) P.scenes[_selScene] = {};
+    P.scenes[_selScene].content = ta.value;
+    P.scenes[_selScene].wordCount = wc(ta.value);
+    P.scenes[_selScene].updated = Date.now();
+    // update scene title in outline
+    const scDef = findScene(_selScene);
+    if (scDef && ti.value.trim()) scDef.title = ti.value.trim();
+  }
+  localStorage.setItem('inkwell_project', JSON.stringify(P));
+  _dirty = false;
+  if (!silent) toast('Saved');
+  updateWordBadge();
+}
+
+function markDirty() { _dirty = true; updateWordBadge(); }
+
+/* ── HELPERS ── */
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function uid() { return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+function wc(txt) { const t=(txt||'').trim(); return t?t.split(/\s+/).length:0; }
+
+function allScenes() {
+  const out = [];
+  (P.outline.acts||[]).forEach(a => (a.chapters||[]).forEach(c => (c.scenes||[]).forEach(s => out.push(s))));
+  return out;
+}
+function findScene(id) { return allScenes().find(s => s.id === id); }
+function totalWords() { return Object.values(P.scenes||{}).reduce((n,s) => n+(s.wordCount||0),0); }
+
+const STATUS_COLORS = {
+  'not-started':'#94a3b8','drafting':'#60a5fa','drafted':'#fbbf24','revised':'#f97316','final':'#10b981'
+};
+const CAT_COLORS = {
+  premise:'#a78bfa',character:'#60a5fa',scene:'#34d399',conflict:'#f87171',theme:'#fbbf24',research:'#fb923c'
+};
+const CHAR_COLORS = ['#7c3aed','#2563eb','#059669','#d97706','#dc2626','#db2777','#0891b2','#65a30d'];
+
+/* ── THEME ── */
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', P?.settings?.dark ? 'dark' : '');
+}
+function toggleDark() {
+  if (!P) return;
+  P.settings.dark = !P.settings.dark;
+  applyTheme();
+  markDirty();
+}
+
+/* ── WORKSPACES ── */
+function switchWS(name) {
+  if (name === _ws && name !== 'write') return;
+  save(true);
+  _ws = name;
+  document.querySelectorAll('.workspace').forEach(w => w.classList.remove('active'));
+  document.getElementById('ws-'+name).classList.add('active');
+  document.querySelectorAll('.ws-btn').forEach(b => b.classList.toggle('active', b.dataset.ws === name));
+  document.getElementById('sb-label').textContent = {idea:'Ideas',outline:'Outline',codex:'Characters',write:'Scenes',edit:'Chapters'}[name]||name;
+  renderSidebar();
+  if (name==='outline') renderOutline();
+  if (name==='codex') renderCodex();
+  if (name==='write') renderWritePanel();
+  if (name==='edit') renderEdit();
+  if (name==='idea') renderIdeas();
+}
+
+function renderAll() {
+  updateWordBadge();
+  renderSidebar();
+  renderIdeas();
+  document.getElementById('proj-name').textContent = P.title||'Untitled';
+}
+
+function updateWordBadge() {
+  if (!P) return;
+  const tw = totalWords();
+  const pct = P.targetWords ? Math.round(tw/P.targetWords*100) : 0;
+  document.getElementById('wordcount-badge').textContent = `${tw.toLocaleString()} / ${(P.targetWords||0).toLocaleString()} words (${pct}%)`;
+}
+
+/* ── SIDEBAR ── */
+function renderSidebar() {
+  if (!P) return;
+  const el = document.getElementById('sb-body');
+  const addBtn = document.getElementById('sb-add-btn');
+  if (_ws==='idea') { addBtn.title='Add idea'; el.innerHTML='<div style="padding:8px 8px 4px;font-size:11px;color:var(--sbt2)">Click canvas to add ideas, or use the + button.</div>'; return; }
+  if (_ws==='codex') { addBtn.title='Add character'; renderSBCodex(el); return; }
+  if (_ws==='write'||_ws==='outline'||_ws==='edit') { addBtn.title='Add scene'; renderSBOutline(el); return; }
+  el.innerHTML='';
+}
+
+function renderSBCodex(el) {
+  const chars = P.codex.characters||[];
+  if (!chars.length) { el.innerHTML='<div style="padding:12px 8px;font-size:12px;color:var(--sbt2)">No characters yet. Add one in the Codex tab.</div>'; return; }
+  el.innerHTML = chars.map(c => `
+    <div class="sb-item" onclick="switchWS('codex');switchCX('chars')">
+      <span style="width:8px;height:8px;border-radius:50%;background:${c.color||'#7c3aed'};flex-shrink:0;display:inline-block"></span>
+      <span style="overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</span>
+      <span style="font-size:10px;color:var(--sbt3);margin-left:auto">${esc(c.role||'')}</span>
+    </div>`).join('');
+}
+
+function renderSBOutline(el) {
+  let html = '';
+  (P.outline.acts||[]).forEach((act,ai) => {
+    html += `<div class="sb-item act"><span>Act ${act.number||ai+1}: ${esc(act.title||'Untitled')}</span></div>`;
+    (act.chapters||[]).forEach((ch,ci) => {
+      html += `<div class="sb-item chapter"><span class="sb-arrow open">▶</span>${esc(ch.title||`Chapter ${ch.number||ci+1}`)}</div>`;
+      (ch.scenes||[]).forEach(sc => {
+        const sw = P.scenes[sc.id]?.wordCount||0;
+        html += `<div class="sb-item scene${_selScene===sc.id?' active':''}" onclick="selectScene('${sc.id}')">
+          <span style="width:6px;height:6px;border-radius:50%;background:${STATUS_COLORS[sc.status]||'#94a3b8'};flex-shrink:0;display:inline-block"></span>
+          <span style="overflow:hidden;text-overflow:ellipsis;flex:1">${esc(sc.title||'Untitled scene')}</span>
+          <span class="sb-wc">${sw?sw+'w':''}</span>
+        </div>`;
+      });
+    });
+  });
+  if (!html) html = '<div style="padding:12px 8px;font-size:12px;color:var(--sbt2)">No acts yet. Go to Outline to add structure.</div>';
+  el.innerHTML = html;
+}
+
+function sbAddAction() {
+  if (_ws==='idea') openIdeaMo();
+  else if (_ws==='codex') openCharMo();
+  else if (_ws==='outline'||_ws==='write') openQuickScene();
+}
+
+/* ── IDEA BOARD ── */
+let _ideaNextX = 40, _ideaNextY = 40;
+
+function renderIdeas() {
+  const el = document.getElementById('idea-grid');
+  el.innerHTML = '';
+  (P.ideas||[]).forEach(idea => {
+    if (_ideaFilter !== 'all' && idea.category !== _ideaFilter) return;
+    createStickyEl(idea);
+  });
+}
+
+function createStickyEl(idea) {
+  const el = document.createElement('div');
+  el.className = 'sticky';
+  el.id = 'sticky_'+idea.id;
+  el.style.left = (idea.x||40)+'px';
+  el.style.top = (idea.y||40)+'px';
+  el.style.width = (idea.w||180)+'px';
+  el.style.minHeight = (idea.h||90)+'px';
+  const col = CAT_COLORS[idea.category]||'#a78bfa';
+  el.style.background = col+'22';
+  el.style.borderLeft = `3px solid ${col}`;
+  el.innerHTML = `
+    <button class="sticky-del" onclick="deleteIdea('${idea.id}')">✕</button>
+    <div contenteditable="true" class="sticky-text" onblur="stickyBlur('${idea.id}',this)" style="outline:none;min-height:50px;color:var(--fg)">${esc(idea.text)}</div>
+    <div class="sticky-cat" style="color:${col}">${idea.category}</div>`;
+  el.addEventListener('mousedown', stickyDragStart);
+  document.getElementById('idea-grid').appendChild(el);
+}
+
+function stickyDragStart(e) {
+  if (e.target.classList.contains('sticky-text') || e.target.tagName==='BUTTON') return;
+  _dragSticky = e.currentTarget;
+  const r = _dragSticky.getBoundingClientRect();
+  _dragOffX = e.clientX - r.left;
+  _dragOffY = e.clientY - r.top;
+  document.addEventListener('mousemove', stickyDragMove);
+  document.addEventListener('mouseup', stickyDragEnd);
+  e.preventDefault();
+}
+function stickyDragMove(e) {
+  if (!_dragSticky) return;
+  const canvas = document.getElementById('idea-canvas');
+  const cr = canvas.getBoundingClientRect();
+  const x = Math.max(0, e.clientX - cr.left - _dragOffX);
+  const y = Math.max(0, e.clientY - cr.top - _dragOffY);
+  _dragSticky.style.left = x+'px';
+  _dragSticky.style.top = y+'px';
+}
+function stickyDragEnd() {
+  if (!_dragSticky) return;
+  const id = _dragSticky.id.replace('sticky_','');
+  const idea = P.ideas.find(i => i.id===id);
+  if (idea) { idea.x=parseInt(_dragSticky.style.left); idea.y=parseInt(_dragSticky.style.top); markDirty(); }
+  _dragSticky = null;
+  document.removeEventListener('mousemove', stickyDragMove);
+  document.removeEventListener('mouseup', stickyDragEnd);
+}
+function stickyBlur(id, el) {
+  const idea = P.ideas.find(i => i.id===id);
+  if (idea) { idea.text = el.textContent; markDirty(); }
+}
+function deleteIdea(id) {
+  P.ideas = P.ideas.filter(i => i.id!==id);
+  const el = document.getElementById('sticky_'+id);
+  if (el) el.remove();
+  markDirty();
+}
+function canvasClick(e) {
+  if (e.target.id!=='idea-canvas'&&e.target.id!=='idea-grid') return;
+  // double-click to create
+}
+document.addEventListener('dblclick', e => {
+  if (e.target.id==='idea-canvas'||e.target.id==='idea-grid') {
+    const canvas = document.getElementById('idea-canvas');
+    const r = canvas.getBoundingClientRect();
+    _ideaNextX = e.clientX-r.left-90;
+    _ideaNextY = e.clientY-r.top-40;
+    openIdeaMo();
+  }
+});
+function clearCanvas() {
+  if (!confirm('Clear all ideas?')) return;
+  P.ideas = []; renderIdeas(); markDirty();
+}
+function filterIdeas(cat) {
+  _ideaFilter = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat===cat));
+  renderIdeas();
+}
+function openIdeaMo() {
+  document.getElementById('idea-text').value='';
+  openMo('idea-mo');
+  setTimeout(()=>document.getElementById('idea-text').focus(),80);
+}
+function saveIdeaMo() {
+  const text = document.getElementById('idea-text').value.trim();
+  if (!text) { toast('Enter some text'); return; }
+  const cat = document.getElementById('idea-cat').value;
+  const idea = {id:uid(),text,category:cat,x:_ideaNextX||40,y:_ideaNextY||40,w:180,h:90};
+  P.ideas.push(idea);
+  _ideaNextX = (_ideaNextX||40)+200; if(_ideaNextX>1200){_ideaNextX=40;_ideaNextY=(_ideaNextY||40)+120;}
+  createStickyEl(idea);
+  closeMo('idea-mo'); markDirty();
+}
+
+/* ── OUTLINE ── */
+function renderOutline() {
+  renderOutlineList();
+  renderArcChart();
+}
+
+function renderOutlineList() {
+  const el = document.getElementById('outline-list');
+  let html = '';
+  (P.outline.acts||[]).forEach((act,ai) => {
+    html += `<div class="outline-act">
+      <div class="outline-act-head" onclick="toggleAct('act_${act.id}')">
+        <span class="sb-arrow open" id="act_arr_${act.id}">▶</span>
+        <span style="flex:1">Act ${act.number||ai+1}: ${esc(act.title||'Untitled')}</span>
+        <button class="sb-add" onclick="event.stopPropagation();addChapter('${act.id}')" title="Add chapter">+</button>
+        <button class="sb-add" onclick="event.stopPropagation();deleteAct('${act.id}')" title="Delete act" style="font-size:13px;opacity:.5">✕</button>
+      </div>
+      <div id="act_${act.id}">`;
+    (act.chapters||[]).forEach((ch,ci) => {
+      const scCount = (ch.scenes||[]).length;
+      const draftedCount = (ch.scenes||[]).filter(s=>s.status==='drafted'||s.status==='revised'||s.status==='final').length;
+      html += `<div class="outline-ch">
+        <div class="outline-ch-head" onclick="toggleCh('ch_${ch.id}')">
+          <span class="sb-arrow open" id="ch_arr_${ch.id}">▶</span>
+          <span style="flex:1">${esc(ch.title||`Chapter ${ch.number||ci+1}`)}</span>
+          <span style="font-size:10px;color:var(--fg2)">${draftedCount}/${scCount}</span>
+          <button class="sb-add" onclick="event.stopPropagation();addScene('${act.id}','${ch.id}')" title="Add scene">+</button>
+          <button class="sb-add" onclick="event.stopPropagation();deleteChapter('${act.id}','${ch.id}')" style="font-size:13px;opacity:.5">✕</button>
+        </div>
+        <div id="ch_${ch.id}">`;
+      (ch.scenes||[]).forEach(sc => {
+        const sw = P.scenes[sc.id]?.wordCount||0;
+        html += `<div class="outline-sc${_selOutlineScene===sc.id?' sel':''}" onclick="selOutlineScene('${sc.id}')">
+          <span style="width:7px;height:7px;border-radius:50%;background:${STATUS_COLORS[sc.status]||'#94a3b8'};flex-shrink:0;display:inline-block"></span>
+          <span style="flex:1">${esc(sc.title||'Untitled')}</span>
+          <span style="font-size:10px;color:var(--fg2)">${sw?sw+'w':''}</span>
+          <button class="sb-add" onclick="event.stopPropagation();deleteScene('${act.id}','${ch.id}','${sc.id}')" style="font-size:13px;opacity:.5">✕</button>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+    html += `</div></div>`;
+  });
+  el.innerHTML = html || `<div style="padding:12px 8px;font-size:12px;color:var(--fg2)">No acts yet. Click "+ Act" to start.</div>`;
+}
+
+function toggleAct(id) {
+  const el = document.getElementById(id);
+  const arr = document.getElementById('act_arr_'+id.replace('act_',''));
+  if (!el) return;
+  const hidden = el.style.display==='none';
+  el.style.display = hidden?'block':'none';
+  if (arr) arr.style.transform = hidden?'rotate(90deg)':'rotate(0deg)';
+}
+function toggleCh(id) {
+  const el = document.getElementById(id);
+  const arr = document.getElementById('ch_arr_'+id.replace('ch_',''));
+  if (!el) return;
+  const hidden = el.style.display==='none';
+  el.style.display = hidden?'block':'none';
+  if (arr) arr.style.transform = hidden?'rotate(90deg)':'rotate(0deg)';
+}
+
+function addAct() {
+  const title = prompt('Act title (or leave blank):','') ;
+  if (title===null) return;
+  const n = (P.outline.acts||[]).length+1;
+  if (!P.outline.acts) P.outline.acts=[];
+  P.outline.acts.push({id:uid(),title:title||`Act ${n}`,number:n,chapters:[]});
+  markDirty(); renderOutline(); renderSidebar();
+}
+function deleteAct(actId) {
+  if (!confirm('Delete this act and all its chapters/scenes?')) return;
+  P.outline.acts = P.outline.acts.filter(a=>a.id!==actId);
+  markDirty(); renderOutline(); renderSidebar();
+}
+function addChapter(actId) {
+  const act = P.outline.acts.find(a=>a.id===actId); if(!act)return;
+  const title = prompt('Chapter title:','') ;
+  if (title===null) return;
+  if (!act.chapters) act.chapters=[];
+  const n = act.chapters.length+1;
+  act.chapters.push({id:uid(),title:title||`Chapter ${n}`,number:n,scenes:[]});
+  markDirty(); renderOutline(); renderSidebar();
+}
+function deleteChapter(actId,chId) {
+  if (!confirm('Delete this chapter and all its scenes?')) return;
+  const act=P.outline.acts.find(a=>a.id===actId); if(!act)return;
+  act.chapters=act.chapters.filter(c=>c.id!==chId);
+  markDirty(); renderOutline(); renderSidebar();
+}
+function addScene(actId,chId) {
+  const act=P.outline.acts.find(a=>a.id===actId); if(!act)return;
+  const ch=act.chapters.find(c=>c.id===chId); if(!ch)return;
+  const title=prompt('Scene title:',''); if(title===null)return;
+  if(!ch.scenes)ch.scenes=[];
+  const sc={id:uid(),title:title||'Untitled scene',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:5,wordTarget:1200,status:'not-started'};
+  ch.scenes.push(sc);
+  if(!P.scenes[sc.id])P.scenes[sc.id]={content:'',wordCount:0,status:'not-started',created:Date.now(),updated:Date.now()};
+  markDirty(); renderOutline(); renderSidebar();
+  selOutlineScene(sc.id);
+}
+function deleteScene(actId,chId,scId) {
+  if (!confirm('Delete this scene?')) return;
+  const act=P.outline.acts.find(a=>a.id===actId);if(!act)return;
+  const ch=act.chapters.find(c=>c.id===chId);if(!ch)return;
+  ch.scenes=ch.scenes.filter(s=>s.id!==scId);
+  delete P.scenes[scId];
+  if(_selOutlineScene===scId){_selOutlineScene=null;document.getElementById('outline-form').style.display='none';document.getElementById('outline-empty').style.display='block';}
+  markDirty(); renderOutline(); renderSidebar();
+}
+function selOutlineScene(id) {
+  _selOutlineScene=id;
+  const sc=findScene(id); if(!sc)return;
+  document.getElementById('outline-empty').style.display='none';
+  document.getElementById('outline-form').style.display='block';
+  renderOutlineForm(sc);
+  renderOutlineList(); // re-render to update selection
+  renderArcChart();
+}
+function renderOutlineForm(sc) {
+  const chars = (P.codex.characters||[]).map(c=>`<option value="${esc(c.name)}"${sc.pov===c.name?'selected':''}>${esc(c.name)}</option>`).join('');
+  const locs = (P.codex.locations||[]).map(l=>`<option value="${esc(l.name)}"${sc.location===l.name?'selected':''}>${esc(l.name)}</option>`).join('');
+  const statusOpts = ['not-started','drafting','drafted','revised','final'].map(s=>`
+    <div class="ss-opt" style="background:${_selOutlineScene&&sc.status===s?STATUS_COLORS[s]+'33':'transparent'};color:${STATUS_COLORS[s]};border-color:${sc.status===s?STATUS_COLORS[s]:STATUS_COLORS[s]+'55'}" onclick="setSceneStatus('${sc.id}','${s}')">${s.replace('-',' ')}</div>
+  `).join('');
+  const intDots = Array.from({length:10},(_,i)=>`<div class="int-dot${(sc.intensity||5)>i?' on':''}" onclick="setIntensity('${sc.id}',${i+1})" title="${i+1}"></div>`).join('');
+
+  document.getElementById('outline-form').innerHTML = `
+    <h2 style="font-size:16px;font-weight:700;color:var(--fg);margin-bottom:18px">${esc(sc.title||'Untitled')}</h2>
+    <span class="od-label">Title</span>
+    <input class="od-input" style="min-height:auto" value="${esc(sc.title||'')}" oninput="updateSceneProp('${sc.id}','title',this.value)" placeholder="Scene title">
+    <div class="od-row">
+      <div>
+        <span class="od-label">POV Character</span>
+        <select class="od-input" style="min-height:auto" onchange="updateSceneProp('${sc.id}','pov',this.value)">
+          <option value="">— none —</option>${chars}
+        </select>
+      </div>
+      <div>
+        <span class="od-label">Location</span>
+        <select class="od-input" style="min-height:auto" onchange="updateSceneProp('${sc.id}','location',this.value)">
+          <option value="">— none —</option>${locs}
+        </select>
+      </div>
+    </div>
+    <span class="od-label">Goal — what does the POV character want?</span>
+    <textarea class="od-input" rows="2" oninput="updateSceneProp('${sc.id}','goal',this.value)" placeholder="e.g. To convince her father to let her leave">${esc(sc.goal||'')}</textarea>
+    <span class="od-label">Conflict — what opposes them?</span>
+    <textarea class="od-input" rows="2" oninput="updateSceneProp('${sc.id}','conflict',this.value)" placeholder="e.g. He reveals a secret that changes everything">${esc(sc.conflict||'')}</textarea>
+    <span class="od-label">Outcome — what changes by the end?</span>
+    <textarea class="od-input" rows="2" oninput="updateSceneProp('${sc.id}','outcome',this.value)" placeholder="e.g. She discovers she has no choice but to stay">${esc(sc.outcome||'')}</textarea>
+    <span class="od-label">Intensity (${sc.intensity||5}/10)</span>
+    <div class="intensity-bar">${intDots}</div>
+    <span class="od-label">Word target</span>
+    <input class="od-input" type="number" style="min-height:auto;width:120px" value="${sc.wordTarget||1200}" oninput="updateSceneProp('${sc.id}','wordTarget',parseInt(this.value)||1200)">
+    <span class="od-label">Status</span>
+    <div class="status-sel">${statusOpts}</div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="add-btn" onclick="selectScene('${sc.id}');switchWS('write')">✍ Write this scene</button>
+    </div>
+  `;
+}
+function updateSceneProp(id,prop,val) {
+  const sc=findScene(id); if(!sc)return;
+  sc[prop]=val; markDirty();
+  if(prop==='intensity')renderArcChart();
+  if(prop==='title'){document.querySelector(`#outline-form h2`).textContent=val||'Untitled';renderSidebar();}
+}
+function setSceneStatus(id,status) {
+  const sc=findScene(id); if(!sc)return;
+  sc.status=status;
+  if(P.scenes[id])P.scenes[id].status=status;
+  markDirty(); renderOutlineList(); renderArcChart();
+  // re-render form status buttons
+  const btn=document.querySelectorAll('.ss-opt');
+  btn.forEach(b=>{ const s=b.textContent.replace(' ','-'); b.style.background=s===status?STATUS_COLORS[status]+'33':'transparent'; b.style.borderColor=s===status?STATUS_COLORS[status]:STATUS_COLORS[status]+'55'; });
+}
+function setIntensity(id,val) {
+  const sc=findScene(id); if(!sc)return;
+  sc.intensity=val; markDirty();
+  // re-render dots
+  document.querySelectorAll('.int-dot').forEach((d,i)=>d.classList.toggle('on',i<val));
+  // update label
+  const lbl=document.querySelector('.od-label[onclick=""]'); // fallback
+  renderArcChart();
+}
+
+function renderArcChart() {
+  const el=document.getElementById('arc-chart'); if(!el)return;
+  const scenes=allScenes();
+  if(!scenes.length){el.innerHTML='';return;}
+  const maxH=44;
+  el.innerHTML=scenes.map(sc=>{
+    const h=Math.max(4,Math.round((sc.intensity||5)/10*maxH));
+    const col=STATUS_COLORS[sc.status]||'#94a3b8';
+    const isActive=sc.id===_selOutlineScene;
+    return `<div title="${esc(sc.title||'')}: ${sc.intensity||5}/10" onclick="selOutlineScene('${sc.id}')"
+      style="width:${Math.max(6,Math.floor(400/Math.max(scenes.length,1))-2)}px;height:${h}px;background:${col};border-radius:2px 2px 0 0;cursor:pointer;transition:opacity .15s;opacity:${isActive?1:.7};flex-shrink:0;max-width:24px"></div>`;
+  }).join('');
+}
+
+/* ── CODEX ── */
+function switchCX(tab) {
+  document.querySelectorAll('.cx-tab').forEach(t=>t.classList.toggle('active',t.dataset.cx===tab));
+  document.querySelectorAll('.cx-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('cx-'+tab).classList.add('active');
+  renderCodexTab(tab);
+  document.getElementById('sb-label').textContent = {chars:'Characters',locs:'Locations',timeline:'Timeline',themes:'Themes'}[tab]||'Codex';
+}
+function renderCodex() { renderCodexTab('chars'); }
+function renderCodexTab(tab) {
+  if(tab==='chars') renderChars();
+  if(tab==='locs') renderLocs();
+  if(tab==='timeline') renderTimeline();
+  if(tab==='themes') renderThemes();
+}
+
+function renderChars() {
+  const el=document.getElementById('cx-chars-body');
+  const chars=P.codex.characters||[];
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <span style="font-size:13px;font-weight:700;color:var(--fg)">${chars.length} character${chars.length!==1?'s':''}</span>
+    <button class="add-btn" onclick="openCharMo()">+ Character</button>
+  </div>`;
+  if(!chars.length){ html+='<div class="empty-state"><h3>No characters yet</h3><p>Add your protagonist, antagonist, and supporting cast.</p><button class="btn" onclick="openCharMo()">Add first character</button></div>'; el.innerHTML=html; return; }
+  html+='<div class="char-grid">';
+  chars.forEach((c,i)=>{
+    html+=`<div class="char-card" onclick="editChar(${i})">
+      <div class="char-name"><span class="char-color" style="background:${c.color||'#7c3aed'}"></span>${esc(c.name)}</div>
+      <div class="char-role">${esc(c.role||'')}</div>
+      <div class="char-arc">${esc((c.arc||'').substring(0,80))}${(c.arc||'').length>80?'…':''}</div>
+      <button onclick="event.stopPropagation();deleteChar(${i})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--fg3);cursor:pointer;font-size:13px">✕</button>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+function renderLocs() {
+  const el=document.getElementById('cx-locs-body');
+  const locs=P.codex.locations||[];
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <span style="font-size:13px;font-weight:700;color:var(--fg)">${locs.length} location${locs.length!==1?'s':''}</span>
+    <button class="add-btn" onclick="openLocMo()">+ Location</button>
+  </div><div class="loc-list">`;
+  if(!locs.length){ el.innerHTML=html+'</div><div class="empty-state"><h3>No locations yet</h3><p>Add the places where your story unfolds.</p><button class="btn" onclick="openLocMo()">Add first location</button></div>'; return; }
+  locs.forEach((l,i)=>{
+    html+=`<div class="loc-item">
+      <div style="display:flex;justify-content:space-between">
+        <div class="loc-name">${esc(l.name)}</div>
+        <button onclick="deleteLoc(${i})" style="background:none;border:none;color:var(--fg3);cursor:pointer;font-size:13px">✕</button>
+      </div>
+      <div class="loc-desc">${esc((l.description||'').substring(0,120))}${(l.description||'').length>120?'…':''}</div>
+    </div>`;
+  });
+  el.innerHTML=html+'</div>';
+}
+function renderTimeline() {
+  const el=document.getElementById('cx-timeline-body');
+  const events=(P.codex.timeline||[]).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <span style="font-size:13px;font-weight:700;color:var(--fg)">${events.length} event${events.length!==1?'s':''}</span>
+    <button class="add-btn" onclick="openTlMo()">+ Event</button>
+  </div>`;
+  if(!events.length){ html+='<div class="empty-state"><h3>No events yet</h3><p>Build a chronological map of your story\'s history.</p><button class="btn" onclick="openTlMo()">Add first event</button></div>'; el.innerHTML=html; return; }
+  html+='<div class="tl-line">';
+  events.forEach((ev,i)=>{
+    const chars=(P.codex.characters||[]).filter(c=>(ev.characterIds||[]).includes(c.id));
+    html+=`<div class="tl-event">
+      <div class="tl-date">${esc(ev.date||'')}</div>
+      <div class="tl-text">${esc(ev.event||'')}</div>
+      ${chars.map(c=>`<span class="char-pill" style="background:${c.color||'#7c3aed'}22;color:${c.color||'#7c3aed'}">${esc(c.name)}</span>`).join('')}
+      <button onclick="deleteTl(${i})" style="background:none;border:none;color:var(--fg3);cursor:pointer;font-size:12px;margin-top:4px;display:block">delete</button>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+function renderThemes() {
+  const el=document.getElementById('cx-themes-body');
+  const themes=P.codex.themes||[];
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <span style="font-size:13px;font-weight:700;color:var(--fg)">${themes.length} theme${themes.length!==1?'s':''}</span>
+    <button class="add-btn" onclick="openThemeMo()">+ Theme</button>
+  </div>`;
+  if(!themes.length){ html+='<div class="empty-state"><h3>No themes yet</h3><p>Track the ideas and questions that run through your work.</p><button class="btn" onclick="openThemeMo()">Add first theme</button></div>'; el.innerHTML=html; return; }
+  themes.forEach((t,i)=>{
+    html+=`<div style="padding:14px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:14px;font-weight:700;color:var(--fg)">${esc(t.name)}</span>
+        <button onclick="deleteTheme(${i})" style="background:none;border:none;color:var(--fg3);cursor:pointer;font-size:13px">✕</button>
+      </div>
+      <div style="font-size:13px;color:var(--fg2);line-height:1.5">${esc(t.description||'')}</div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+/* Codex CRUD */
+let _editCharIdx=-1;
+function openCharMo(idx) {
+  _editCharIdx = idx!==undefined?idx:-1;
+  const c=idx!==undefined?(P.codex.characters||[])[idx]||{}:{};
+  document.getElementById('char-mo-title').textContent=idx!==undefined?'Edit Character':'Add Character';
+  document.getElementById('ch-name').value=c.name||'';
+  document.getElementById('ch-role').value=c.role||'';
+  document.getElementById('ch-arc').value=c.arc||'';
+  document.getElementById('ch-traits').value=c.traits||'';
+  document.getElementById('ch-notes').value=c.notes||'';
+  // color picker
+  document.getElementById('char-colors').innerHTML=CHAR_COLORS.map(col=>`<div class="cp-dot${(c.color||CHAR_COLORS[0])===col?' sel':''}" style="background:${col}" onclick="selCharColor('${col}',this)"></div>`).join('');
+  openMo('char-mo');
+  setTimeout(()=>document.getElementById('ch-name').focus(),80);
+}
+function selCharColor(col,el) {
+  document.querySelectorAll('#char-colors .cp-dot').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function editChar(i){openCharMo(i);}
+function saveCharMo() {
+  const name=document.getElementById('ch-name').value.trim();
+  if(!name){toast('Name required');return;}
+  const selCol=document.querySelector('#char-colors .cp-dot.sel');
+  const color=selCol?selCol.style.background:CHAR_COLORS[0];
+  const ch={id:_editCharIdx>=0?(P.codex.characters[_editCharIdx].id||uid()):uid(),name,role:document.getElementById('ch-role').value.trim(),arc:document.getElementById('ch-arc').value.trim(),traits:document.getElementById('ch-traits').value.trim(),notes:document.getElementById('ch-notes').value.trim(),color};
+  if(_editCharIdx>=0) P.codex.characters[_editCharIdx]=ch;
+  else {if(!P.codex.characters)P.codex.characters=[];P.codex.characters.push(ch);}
+  closeMo('char-mo'); markDirty(); renderChars();
+}
+function deleteChar(i){if(!confirm('Delete character?'))return;P.codex.characters.splice(i,1);markDirty();renderChars();}
+
+function openLocMo(){document.getElementById('lo-name').value='';document.getElementById('lo-desc').value='';document.getElementById('lo-notes').value='';openMo('loc-mo');setTimeout(()=>document.getElementById('lo-name').focus(),80);}
+function saveLocMo(){const name=document.getElementById('lo-name').value.trim();if(!name){toast('Name required');return;}P.codex.locations.push({id:uid(),name,description:document.getElementById('lo-desc').value.trim(),notes:document.getElementById('lo-notes').value.trim()});closeMo('loc-mo');markDirty();renderLocs();}
+function deleteLoc(i){if(!confirm('Delete location?'))return;P.codex.locations.splice(i,1);markDirty();renderLocs();}
+
+function openTlMo(){document.getElementById('tl-date').value='';document.getElementById('tl-event').value='';openMo('tl-mo');setTimeout(()=>document.getElementById('tl-date').focus(),80);}
+function saveTlMo(){const ev=document.getElementById('tl-event').value.trim();if(!ev){toast('Event text required');return;}P.codex.timeline.push({id:uid(),date:document.getElementById('tl-date').value.trim(),event:ev,characterIds:[]});closeMo('tl-mo');markDirty();renderTimeline();}
+function deleteTl(i){if(!confirm('Delete event?'))return;P.codex.timeline.splice(i,1);markDirty();renderTimeline();}
+
+function openThemeMo(){document.getElementById('th-name').value='';document.getElementById('th-desc').value='';openMo('theme-mo');setTimeout(()=>document.getElementById('th-name').focus(),80);}
+function saveThemeMo(){const name=document.getElementById('th-name').value.trim();if(!name){toast('Name required');return;}P.codex.themes.push({id:uid(),name,description:document.getElementById('th-desc').value.trim()});closeMo('theme-mo');markDirty();renderThemes();}
+function deleteTheme(i){if(!confirm('Delete theme?'))return;P.codex.themes.splice(i,1);markDirty();renderThemes();}
+
+/* ── WRITE ── */
+const we_ta=document.getElementById('we-ta');
+const we_ov=document.getElementById('we-ov');
+
+function renderWritePanel() {
+  renderWriteSceneList();
+  if(_selScene) loadSceneIntoEditor(_selScene);
+  else {
+    const scenes=allScenes();
+    if(scenes.length) loadSceneIntoEditor(scenes[0].id);
+  }
+}
+
+function renderWriteSceneList() {
+  const el=document.getElementById('write-scene-list');
+  let html='';
+  (P.outline.acts||[]).forEach((act,ai)=>{
+    html+=`<div style="padding:5px 4px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2)">Act ${act.number||ai+1}</div>`;
+    (act.chapters||[]).forEach((ch,ci)=>{
+      html+=`<div style="padding:4px 4px 2px;font-size:11px;font-weight:600;color:var(--fg2)">${esc(ch.title||`Ch ${ci+1}`)}</div>`;
+      (ch.scenes||[]).forEach(sc=>{
+        const sw=P.scenes[sc.id]?.wordCount||0;
+        html+=`<div class="sb-item scene${_selScene===sc.id?' active':''}" onclick="selectScene('${sc.id}')">
+          <span style="width:6px;height:6px;border-radius:50%;background:${STATUS_COLORS[sc.status]||'#94a3b8'};flex-shrink:0;display:inline-block"></span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(sc.title||'Untitled')}</span>
+          <span class="sb-wc">${sw?sw+'w':''}</span>
+        </div>`;
+      });
+    });
+  });
+  el.innerHTML=html||'<div style="padding:8px 4px;font-size:12px;color:var(--fg2)">No scenes yet.</div>';
+}
+
+function selectScene(id) {
+  if (_selScene && _ws==='write') {
+    // save current
+    const sc=P.scenes[_selScene];
+    if(sc){sc.content=we_ta.value;sc.wordCount=wc(we_ta.value);sc.updated=Date.now();}
+  }
+  _selScene=id;
+  if(_ws==='write') loadSceneIntoEditor(id);
+  renderSidebar();
+  renderWriteSceneList();
+}
+
+function loadSceneIntoEditor(id) {
+  _selScene=id;
+  const scDef=findScene(id);
+  const scData=P.scenes[id]||{content:'',wordCount:0};
+  document.getElementById('we-title').value=scDef?scDef.title:'';
+  we_ta.value=scData.content||'';
+  autoResize();
+  updateOv();
+  updateWriteMeta();
+  updateBeatCheck(scDef);
+  _sessionWords=0;
+  _lastWC=scData.wordCount||0;
+}
+
+function updateWriteMeta() {
+  const scDef=findScene(_selScene)||{};
+  const scData=P.scenes[_selScene]||{};
+  document.getElementById('wm-pov').textContent=scDef.pov||'—';
+  document.getElementById('wm-sc').textContent=scDef.title||'—';
+  const wcount=wc(we_ta.value);
+  document.getElementById('wm-wc').textContent=wcount.toLocaleString();
+  const tgt=scDef.wordTarget||1200;
+  document.getElementById('wm-target').textContent=` / ${tgt}`;
+  document.getElementById('wm-sess-wc').textContent=_sessionWords.toLocaleString();
+  const total=totalWords();
+  document.getElementById('wf-total').textContent=`Project: ${total.toLocaleString()} words`;
+  updateWordBadge();
+}
+
+function updateBeatCheck(scDef) {
+  if(!scDef||(!scDef.goal&&!scDef.conflict&&!scDef.outcome)){
+    document.getElementById('we-beat').style.display='none'; return;
+  }
+  document.getElementById('we-beat').style.display='block';
+  document.getElementById('wb-goal').textContent=scDef.goal||'—';
+  document.getElementById('wb-conflict').textContent=scDef.conflict||'—';
+  document.getElementById('wb-outcome').textContent=scDef.outcome||'—';
+}
+
+function sceneMetaChange() {
+  const title=document.getElementById('we-title').value;
+  const scDef=findScene(_selScene);
+  if(scDef)scDef.title=title;
+  renderSidebar(); renderWriteSceneList(); markDirty();
+}
+
+function prevScene() {
+  const scenes=allScenes();
+  const i=scenes.findIndex(s=>s.id===_selScene);
+  if(i>0) selectScene(scenes[i-1].id);
+}
+function nextScene() {
+  const scenes=allScenes();
+  const i=scenes.findIndex(s=>s.id===_selScene);
+  if(i>=0&&i<scenes.length-1) selectScene(scenes[i+1].id);
+}
+
+function openQuickScene() {
+  const acts=P.outline.acts||[];
+  if(!acts.length){toast('Add an act first in Outline');return;}
+  const lastAct=acts[acts.length-1];
+  if(!(lastAct.chapters||[]).length){toast('Add a chapter first in Outline');return;}
+  const lastCh=lastAct.chapters[lastAct.chapters.length-1];
+  const title=prompt('Scene title:','');if(title===null)return;
+  if(!lastCh.scenes)lastCh.scenes=[];
+  const sc={id:uid(),title:title||'Untitled scene',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:5,wordTarget:1200,status:'not-started'};
+  lastCh.scenes.push(sc);
+  if(!P.scenes[sc.id])P.scenes[sc.id]={content:'',wordCount:0,status:'not-started',created:Date.now(),updated:Date.now()};
+  markDirty();renderSidebar();renderWriteSceneList();
+  selectScene(sc.id);
+}
+
+/* ── EDITOR ── */
+function setupEditor() {
+  we_ta.addEventListener('input',()=>{
+    autoResize(); updateOv();
+    const curr=wc(we_ta.value);
+    const diff=curr-_lastWC; _sessionWords+=Math.max(0,diff); _lastWC=curr;
+    if(_selScene&&P.scenes[_selScene]){P.scenes[_selScene].wordCount=curr;P.scenes[_selScene].updated=Date.now();}
+    updateWriteMeta(); markDirty();
+    if(_focusMode) schedTW();
+  });
+  we_ta.addEventListener('keydown',e=>{
+    const mod=e.metaKey||e.ctrlKey;
+    if(mod&&e.key==='s'&&!e.shiftKey){e.preventDefault();save();return;}
+    if(mod&&e.shiftKey&&e.key==='S'){e.preventDefault();syncToGH();return;}
+    if(mod&&e.key==='ArrowUp'){e.preventDefault();prevScene();return;}
+    if(mod&&e.key==='ArrowDown'){e.preventDefault();nextScene();return;}
+    if(mod&&e.key==='f'){e.preventDefault();toggleFocusMode();return;}
+    if(mod&&e.key==='b'){e.preventDefault();wrapSel('**','**');return;}
+    if(mod&&e.key==='i'&&!e.shiftKey){e.preventDefault();wrapSel('*','*');return;}
+    if(e.key==='Tab'){e.preventDefault();insertAt('  ');}
+  });
+  we_ta.addEventListener('click',()=>{if(_focusMode)updateOv();});
+  we_ta.addEventListener('mouseup',()=>{if(_focusMode)setTimeout(updateOv,0);});
+  we_ta.addEventListener('keyup',()=>{if(_focusMode)updateOv();});
+}
+
+function autoResize(){
+  we_ta.style.height='auto';
+  we_ta.style.height=we_ta.scrollHeight+'px';
+  we_ov.style.height=we_ta.scrollHeight+'px';
+}
+
+function wrapSel(b,a){
+  const s=we_ta.selectionStart,e=we_ta.selectionEnd,sel=we_ta.value.substring(s,e);
+  we_ta.setRangeText(b+sel+a,s,e,'select');
+  we_ta.selectionStart=s+b.length;we_ta.selectionEnd=s+b.length+sel.length;
+  we_ta.dispatchEvent(new Event('input'));
+}
+function insertAt(txt){const s=we_ta.selectionStart;we_ta.setRangeText(txt,s,s,'end');we_ta.dispatchEvent(new Event('input'));}
+
+/* ── OVERLAY ── */
+function inlineMD(s){
+  s=s.replace(/\*\*\*(.+?)\*\*\*/g,'<span style="font-weight:700;font-style:italic">$1</span>');
+  s=s.replace(/\*\*(.+?)\*\*/g,'<span style="font-weight:700">$1</span>');
+  s=s.replace(/\*([^*\n]+?)\*/g,'<span style="font-style:italic">$1</span>');
+  s=s.replace(/`([^`]+)`/g,'<span style="background:rgba(128,128,128,.1);border-radius:3px;font-size:.88em">$1</span>');
+  return s;
+}
+function escHTML(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function isInCurPara(start,end){
+  const v=we_ta.value,cp=we_ta.selectionStart;
+  let ps=cp;
+  while(ps>0){const prev=v.lastIndexOf('\n',ps-1);if(prev<0){ps=0;break;}const ls=v.lastIndexOf('\n',prev-1)+1;if(v.substring(ls,prev).trim()===''){ps=prev+1;break;}ps=ls;}
+  let pe=cp;
+  while(pe<v.length){const nx=v.indexOf('\n',pe);if(nx<0){pe=v.length;break;}const ne=v.indexOf('\n',nx+1);const nl=v.substring(nx+1,ne<0?v.length:ne);if(nl.trim()===''){pe=nx;break;}pe=ne<0?v.length:ne;}
+  return end>=ps&&start<=pe;
+}
+
+function updateOv(){
+  if(_ws!=='write')return;
+  const lines=we_ta.value.split('\n');
+  let pos=0,html='';
+  lines.forEach(l=>{
+    const es=escHTML(l);
+    let rendered;
+    if(/^# /.test(l)) rendered=`<span style="font-size:1.35em;font-weight:700;color:var(--fg)">${inlineMD(es)}</span>`;
+    else if(/^## /.test(l)) rendered=`<span style="font-size:1.15em;font-weight:700;color:var(--fg)">${inlineMD(es)}</span>`;
+    else if(/^### /.test(l)) rendered=`<span style="font-size:1.05em;font-weight:600;color:var(--fg)">${inlineMD(es)}</span>`;
+    else if(/^> /.test(l)) rendered=`<span style="color:var(--fg2);border-left:2px solid var(--fg3);padding-left:12px;display:block">${inlineMD(es)}</span>`;
+    else rendered=inlineMD(es);
+    if(_focusMode){
+      const inP=isInCurPara(pos,pos+l.length);
+      html+=inP?rendered:`<span class="dim">${rendered}</span>`;
+    } else html+=rendered;
+    html+='\n';
+    pos+=l.length+1;
+  });
+  we_ov.innerHTML=html;
+}
+
+/* ── FOCUS + TYPEWRITER ── */
+function toggleFocusMode(){
+  _focusMode=!_focusMode;
+  document.getElementById('we-col').style.paddingBottom=_focusMode?'60vh':'120px';
+  updateOv();
+  if(_focusMode) twScroll();
+  toast(_focusMode?'Focus mode on':'Focus mode off');
+}
+function twScroll(){
+  const pos=we_ta.selectionStart;
+  const text=we_ta.value.substring(0,pos);
+  const clone=document.createElement('div');
+  Object.assign(clone.style,{position:'absolute',visibility:'hidden',fontFamily:getComputedStyle(we_ta).fontFamily,fontSize:getComputedStyle(we_ta).fontSize,lineHeight:getComputedStyle(we_ta).lineHeight,whiteSpace:'pre-wrap',wordWrap:'break-word',width:we_ta.offsetWidth+'px',padding:'0'});
+  clone.textContent=text;
+  const cur=document.createElement('span');cur.textContent='|';clone.appendChild(cur);
+  document.body.appendChild(clone);
+  const top=cur.getBoundingClientRect().top+window.scrollY;
+  document.body.removeChild(clone);
+  const col=document.getElementById('we-col');
+  const target=top-col.getBoundingClientRect().top-col.scrollTop - window.innerHeight*0.42;
+  col.scrollTop=Math.max(0,col.scrollTop+target);
+}
+function schedTW(){clearTimeout(_twTimer);_twTimer=setTimeout(twScroll,_focusMode?0:150);}
+
+/* ── EDIT WORKSPACE ── */
+function renderEdit() {
+  const el=document.getElementById('edit-body');
+  let html='';
+  let totalSc=0,draftedSc=0;
+  (P.outline.acts||[]).forEach((act,ai)=>{
+    (act.chapters||[]).forEach((ch,ci)=>{
+      const scenes=ch.scenes||[];
+      const drafted=scenes.filter(s=>s.status==='drafted'||s.status==='revised'||s.status==='final').length;
+      totalSc+=scenes.length; draftedSc+=drafted;
+      html+=`<div class="edit-chapter">
+        <div class="edit-ch-head">
+          <div class="edit-ch-title">${esc(ch.title||`Chapter ${ci+1}`)}</div>
+          <div class="edit-ch-prog" style="color:${STATUS_COLORS['drafted']}">${drafted}/${scenes.length} scenes drafted</div>
+          <div style="margin-left:auto;display:flex;gap:4px">
+            ${scenes.map(s=>`<span style="width:8px;height:8px;border-radius:50%;background:${STATUS_COLORS[s.status]||'#94a3b8'};display:inline-block" title="${esc(s.title||'')} — ${s.status||''}"></span>`).join('')}
+          </div>
+        </div>`;
+      scenes.forEach(sc=>{
+        const content=(P.scenes[sc.id]?.content||'').trim();
+        html+=`<div class="edit-scene">
+          <div class="edit-sc-head">
+            <span style="width:7px;height:7px;border-radius:50%;background:${STATUS_COLORS[sc.status]||'#94a3b8'};display:inline-block"></span>
+            ${esc(sc.title||'Untitled')}
+            <span class="badge" style="background:${STATUS_COLORS[sc.status]||'#94a3b8'}22;color:${STATUS_COLORS[sc.status]||'#94a3b8'}">${sc.status||'not started'}</span>
+            <span style="font-size:11px;color:var(--fg2)">${(P.scenes[sc.id]?.wordCount||0)} words</span>
+            <button onclick="selectScene('${sc.id}');switchWS('write')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-family:var(--font);margin-left:auto">✍ edit</button>
+          </div>
+          <div class="edit-sc-body">${content?esc(content):'<span style="color:var(--fg3);font-style:italic">No content yet.</span>'}</div>
+        </div>`;
+      });
+      html+='</div>';
+    });
+  });
+  el.innerHTML=html||'<div class="empty-state"><h3>Nothing to edit yet</h3><p>Write some scenes first, then come back here for a full manuscript view.</p></div>';
+}
+
+function doSearch() {
+  const q=document.getElementById('edit-search').value.toLowerCase();
+  if(!q){renderEdit();return;}
+  const el=document.getElementById('edit-body');
+  el.querySelectorAll('.edit-sc-body').forEach(div=>{
+    const text=div.textContent;
+    div.innerHTML=text.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>`<mark>${esc(m)}</mark>`);
+  });
+}
+function doReplace() {
+  const q=document.getElementById('edit-search').value;
+  const r=document.getElementById('edit-replace').value;
+  if(!q)return;
+  let count=0;
+  allScenes().forEach(sc=>{
+    if(P.scenes[sc.id]&&P.scenes[sc.id].content){
+      const orig=P.scenes[sc.id].content;
+      P.scenes[sc.id].content=orig.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),()=>{count++;return r;});
+      P.scenes[sc.id].wordCount=wc(P.scenes[sc.id].content);
+    }
+  });
+  toast(`Replaced ${count} occurrence${count!==1?'s':''}`);
+  markDirty(); renderEdit();
+}
+
+function exportMD() {
+  let out=`# ${P.title||'Untitled'}\n\n`;
+  (P.outline.acts||[]).forEach((act,ai)=>{
+    out+=`\n## Act ${act.number||ai+1}: ${act.title||''}\n`;
+    (act.chapters||[]).forEach((ch,ci)=>{
+      out+=`\n### ${ch.title||`Chapter ${ci+1}`}\n\n`;
+      (ch.scenes||[]).forEach(sc=>{
+        out+=`#### ${sc.title||'Untitled'}\n\n`;
+        out+=(P.scenes[sc.id]?.content||'')+'\n\n';
+      });
+    });
+  });
+  dlFile(out,'text/markdown',(P.title||'manuscript').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.md');
+}
+function exportHTML() {
+  let body='';
+  (P.outline.acts||[]).forEach((act,ai)=>{
+    (act.chapters||[]).forEach((ch,ci)=>{
+      body+=`<h2>${esc(ch.title||`Chapter ${ci+1}`)}</h2>`;
+      (ch.scenes||[]).forEach(sc=>{
+        const c=P.scenes[sc.id]?.content||'';
+        body+=`<h3>${esc(sc.title||'')}</h3><p>${c.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</p>`;
+      });
+    });
+  });
+  dlFile(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(P.title||'Manuscript')}</title><style>body{max-width:680px;margin:60px auto;font-family:Georgia,serif;font-size:18px;line-height:1.9;color:#1a1a1a;padding:0 24px}h2{margin:2em 0 .5em}h3{font-size:1em;font-style:italic;color:#666;margin:1.5em 0 .3em}</style></head><body>${body}</body></html>`,'text/html',(P.title||'manuscript').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.html');
+}
+function copyAll() {
+  let out='';
+  allScenes().forEach(sc=>{out+=`${sc.title||''}\n\n${P.scenes[sc.id]?.content||''}\n\n---\n\n`;});
+  navigator.clipboard.writeText(out);
+  toast('Copied to clipboard');
+}
+function dlFile(content,type,name){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+
+/* ── GITHUB SYNC ── */
+async function syncToGH() {
+  const cfg=P.settings||{};
+  if(!cfg.ghTok||!cfg.ghRepo){openSettings();toast('Configure GitHub first');return;}
+  save(true);
+  toast('Syncing…');
+  const url=`https://api.github.com/repos/${cfg.ghRepo}/contents/${cfg.ghPath||'manuscript.json'}`;
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(P,null,2))));
+  let sha='';
+  try{const r=await fetch(url,{headers:{'Authorization':'token '+cfg.ghTok,'Accept':'application/vnd.github.v3+json'}});if(r.ok){const d=await r.json();sha=d.sha||'';}}catch(e){}
+  try{
+    const body={message:`Update manuscript — ${new Date().toISOString().substring(0,16)}`,content,branch:cfg.ghBranch||'main'};
+    if(sha)body.sha=sha;
+    const r=await fetch(url,{method:'PUT',headers:{'Authorization':'token '+cfg.ghTok,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},body:JSON.stringify(body)});
+    if(r.ok){toast('Synced to GitHub ✓');}
+    else{const e=await r.json();toast('Sync failed: '+(e.message||r.status));}
+  }catch(e){toast('Sync error: '+e.message);}
+}
+
+/* ── SETTINGS ── */
+function openSettings() {
+  const cfg=P?.settings||{};
+  document.getElementById('cfg-gh-tok').value=cfg.ghTok||'';
+  document.getElementById('cfg-gh-repo').value=cfg.ghRepo||'';
+  document.getElementById('cfg-gh-path').value=cfg.ghPath||'manuscript.json';
+  document.getElementById('cfg-gh-branch').value=cfg.ghBranch||'main';
+  openMo('settings-mo');
+}
+function saveSettingsMo() {
+  if(!P)return;
+  if(!P.settings)P.settings={};
+  P.settings.ghTok=document.getElementById('cfg-gh-tok').value.trim();
+  P.settings.ghRepo=document.getElementById('cfg-gh-repo').value.trim();
+  P.settings.ghPath=document.getElementById('cfg-gh-path').value.trim()||'manuscript.json';
+  P.settings.ghBranch=document.getElementById('cfg-gh-branch').value.trim()||'main';
+  closeMo('settings-mo'); markDirty(); save(true); toast('Settings saved');
+}
+
+/* ── STATS ── */
+function openStats() {
+  const el=document.getElementById('stats-body');
+  const tw=totalWords();
+  const sc=allScenes();
+  const drafted=sc.filter(s=>s.status==='drafted'||s.status==='revised'||s.status==='final').length;
+  const pct=P.targetWords?Math.min(100,Math.round(tw/P.targetWords*100)):0;
+  const readMins=Math.ceil(tw/220);
+  const acts=(P.outline.acts||[]).length;
+  const chapters=(P.outline.acts||[]).reduce((n,a)=>n+(a.chapters||[]).length,0);
+  el.innerHTML=`
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2);margin-bottom:4px">Completion</div>
+      <div style="font-size:28px;font-weight:700;color:var(--accent)">${pct}%</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:12px;color:var(--fg2)">${tw.toLocaleString()} of ${(P.targetWords||0).toLocaleString()} words</div>
+    </div>
+    <div class="stat-row"><span class="stat-label">Total words</span><span class="stat-val">${tw.toLocaleString()}</span></div>
+    <div class="stat-row"><span class="stat-label">Estimated reading time</span><span class="stat-val">${readMins}m</span></div>
+    <div class="stat-row"><span class="stat-label">Acts</span><span class="stat-val">${acts}</span></div>
+    <div class="stat-row"><span class="stat-label">Chapters</span><span class="stat-val">${chapters}</span></div>
+    <div class="stat-row"><span class="stat-label">Scenes</span><span class="stat-val">${sc.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Scenes drafted</span><span class="stat-val">${drafted} / ${sc.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Characters</span><span class="stat-val">${(P.codex.characters||[]).length}</span></div>
+    <div class="stat-row"><span class="stat-label">Locations</span><span class="stat-val">${(P.codex.locations||[]).length}</span></div>
+    <div class="stat-row"><span class="stat-label">Ideas on board</span><span class="stat-val">${(P.ideas||[]).length}</span></div>
+    <div class="stat-row"><span class="stat-label">Genre</span><span class="stat-val">${esc(P.genre||'—')}</span></div>
+    <div style="margin-top:16px">
+      <button class="add-btn" style="width:100%;text-align:center" onclick="exportMD()">Export Manuscript (.md)</button>
+    </div>
+  `;
+  document.getElementById('stats-panel').classList.add('open');
+}
+
+/* ── PROJECT WIZARD ── */
+function openWizard() { openMo('wizard-mo'); }
+function wzNext(step) {
+  if(step===1) {
+    const t=document.getElementById('wz-title').value.trim();
+    if(!t){toast('Enter a title');return;}
+  }
+  document.getElementById('wz-'+step).classList.remove('active');
+  document.getElementById('wz-'+(step+1)).classList.add('active');
+}
+function wzBack(step) {
+  document.getElementById('wz-'+step).classList.remove('active');
+  document.getElementById('wz-'+(step-1)).classList.add('active');
+}
+function selBeat(el) {
+  document.querySelectorAll('.beat-opt').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  _beatChoice=el.dataset.beat;
+}
+function wzFinish() {
+  const title=document.getElementById('wz-title').value.trim();
+  if(!title){toast('Enter a title');return;}
+  P=BLANK_PROJECT();
+  P.title=title;
+  P.genre=document.getElementById('wz-genre').value;
+  P.targetWords=parseInt(document.getElementById('wz-target').value)||80000;
+  P.premise=document.getElementById('wz-premise').value.trim();
+  P.beatSheet=_beatChoice;
+  // scaffold structure based on beat sheet
+  scaffoldOutline();
+  localStorage.setItem('inkwell_project',JSON.stringify(P));
+  closeMo('wizard-mo');
+  renderAll();
+  applyTheme();
+  toast('Project created. Start with your ideas or outline →');
+}
+function scaffoldOutline() {
+  if(P.beatSheet==='three-act') {
+    P.outline.acts=[
+      {id:uid(),title:'Setup',number:1,chapters:[{id:uid(),title:'Chapter 1',number:1,scenes:[
+        {id:uid(),title:'Opening image',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:3,wordTarget:800,status:'not-started'},
+        {id:uid(),title:'Inciting incident',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:5,wordTarget:1200,status:'not-started'},
+      ]}]},
+      {id:uid(),title:'Confrontation',number:2,chapters:[{id:uid(),title:'Chapter 2',number:2,scenes:[
+        {id:uid(),title:'Rising action',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:6,wordTarget:1500,status:'not-started'},
+        {id:uid(),title:'Midpoint',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:8,wordTarget:1500,status:'not-started'},
+      ]}]},
+      {id:uid(),title:'Resolution',number:3,chapters:[{id:uid(),title:'Chapter 3',number:3,scenes:[
+        {id:uid(),title:'Climax',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:10,wordTarget:2000,status:'not-started'},
+        {id:uid(),title:'Denouement',pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:4,wordTarget:800,status:'not-started'},
+      ]}]},
+    ];
+  } else if(P.beatSheet==='save-the-cat') {
+    const beats=['Opening image','Theme stated','Set-up','Catalyst','Debate','Break into Two','B story','Fun and games','Midpoint','Bad guys close in','All is lost','Dark night of the soul','Break into Three','Finale','Final image'];
+    const act1=['Opening image','Theme stated','Set-up','Catalyst','Debate'];
+    const act2=['Break into Two','B story','Fun and games','Midpoint','Bad guys close in','All is lost','Dark night of the soul'];
+    const act3=['Break into Three','Finale','Final image'];
+    const makeAct=(title,n,bts)=>({id:uid(),title,number:n,chapters:[{id:uid(),title:`Act ${n} scenes`,number:n,scenes:bts.map((b,i)=>({id:uid(),title:b,pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:Math.min(10,3+i),wordTarget:1000,status:'not-started'}))}]});
+    P.outline.acts=[makeAct('Act One',1,act1),makeAct('Act Two',2,act2),makeAct('Act Three',3,act3)];
+  } else if(P.beatSheet==='hero') {
+    const stages=['Ordinary World','Call to Adventure','Refusal of the Call','Meeting the Mentor','Crossing the Threshold','Tests, Allies, Enemies','Approach to Inmost Cave','Ordeal','Reward','The Road Back','Resurrection','Return with Elixir'];
+    P.outline.acts=[
+      {id:uid(),title:'Departure',number:1,chapters:[{id:uid(),title:'Departure',number:1,scenes:stages.slice(0,4).map(b=>({id:uid(),title:b,pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:4,wordTarget:1000,status:'not-started'}))}]},
+      {id:uid(),title:'Initiation',number:2,chapters:[{id:uid(),title:'Initiation',number:2,scenes:stages.slice(4,9).map(b=>({id:uid(),title:b,pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:7,wordTarget:1200,status:'not-started'}))}]},
+      {id:uid(),title:'Return',number:3,chapters:[{id:uid(),title:'Return',number:3,scenes:stages.slice(9).map(b=>({id:uid(),title:b,pov:'',location:'',goal:'',conflict:'',outcome:'',intensity:9,wordTarget:1000,status:'not-started'}))}]},
+    ];
+  } else {
+    P.outline.acts=[{id:uid(),title:'Act One',number:1,chapters:[{id:uid(),title:'Chapter One',number:1,scenes:[]}]}];
+  }
+  // init scene data
+  allScenes().forEach(sc=>{if(!P.scenes[sc.id])P.scenes[sc.id]={content:'',wordCount:0,created:Date.now(),updated:Date.now()};});
+}
+
+/* ── CMD PALETTE ── */
+const CMDS=[
+  {l:'Switch to Ideas',    k:'⌘1',fn:()=>switchWS('idea')},
+  {l:'Switch to Outline',  k:'⌘2',fn:()=>switchWS('outline')},
+  {l:'Switch to Codex',    k:'⌘3',fn:()=>switchWS('codex')},
+  {l:'Switch to Write',    k:'⌘4',fn:()=>switchWS('write')},
+  {l:'Switch to Edit',     k:'⌘5',fn:()=>switchWS('edit')},
+  {l:'Add idea',           k:'',fn:()=>openIdeaMo()},
+  {l:'Add act',            k:'',fn:()=>{switchWS('outline');addAct();}},
+  {l:'Add character',      k:'',fn:()=>{switchWS('codex');openCharMo();}},
+  {l:'Add location',       k:'',fn:()=>{switchWS('codex');openLocMo();}},
+  {l:'Add timeline event', k:'',fn:()=>{switchWS('codex');openTlMo();}},
+  {l:'Write next scene',   k:'⌘↓',fn:()=>{switchWS('write');nextScene();}},
+  {l:'Focus mode',         k:'⌘F',fn:()=>{switchWS('write');toggleFocusMode();}},
+  {l:'Save',               k:'⌘S',fn:()=>save()},
+  {l:'Sync to GitHub',     k:'⌘⇧S',fn:()=>syncToGH()},
+  {l:'Export manuscript',  k:'',fn:()=>exportMD()},
+  {l:'Project stats',      k:'',fn:()=>openStats()},
+  {l:'Settings',           k:'',fn:()=>openSettings()},
+  {l:'New project',        k:'',fn:()=>openWizard()},
+  {l:'Dark mode',          k:'',fn:()=>toggleDark()},
+];
+function openCmd(){document.getElementById('cmd-in').value='';_cmdItems=CMDS;_cmdIdx=0;renderCmds();openMo('cmd-mo');setTimeout(()=>document.getElementById('cmd-in').focus(),80);}
+function filterCmds(){const q=document.getElementById('cmd-in').value.toLowerCase();_cmdItems=q?CMDS.filter(c=>c.l.toLowerCase().includes(q)):CMDS;_cmdIdx=0;renderCmds();}
+function renderCmds(){document.getElementById('cmd-list').innerHTML=_cmdItems.map((c,i)=>`<div class="ci${i===_cmdIdx?' sel':''}" onclick="runCmd(${i})"><span class="ci-l">${esc(c.l)}</span>${c.k?`<span class="ci-k">${esc(c.k)}</span>`:''}</div>`).join('');}
+function runCmd(i){const c=_cmdItems[i]||_cmdItems[_cmdIdx];if(!c)return;closeMo('cmd-mo');setTimeout(()=>c.fn(),60);}
+function cmdKey(e){
+  if(e.key==='ArrowDown'){e.preventDefault();_cmdIdx=Math.min(_cmdIdx+1,_cmdItems.length-1);renderCmds();}
+  else if(e.key==='ArrowUp'){e.preventDefault();_cmdIdx=Math.max(_cmdIdx-1,0);renderCmds();}
+  else if(e.key==='Enter'){e.preventDefault();runCmd(_cmdIdx);}
+  else if(e.key==='Escape'){closeMo('cmd-mo');}
+}
+
+/* ── MODALS ── */
+function openMo(id){document.getElementById(id).classList.add('open');}
+function closeMo(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){document.querySelectorAll('.mo.open').forEach(m=>m.classList.remove('open'));document.getElementById('stats-panel').classList.remove('open');}
+  const mod=e.metaKey||e.ctrlKey;
+  if(mod&&e.key==='k'){e.preventDefault();openCmd();}
+  if(mod&&e.key==='1'){e.preventDefault();switchWS('idea');}
+  if(mod&&e.key==='2'){e.preventDefault();switchWS('outline');}
+  if(mod&&e.key==='3'){e.preventDefault();switchWS('codex');}
+  if(mod&&e.key==='4'){e.preventDefault();switchWS('write');}
+  if(mod&&e.key==='5'){e.preventDefault();switchWS('edit');}
+  if(mod&&e.key==='s'&&!e.shiftKey){e.preventDefault();save();}
+  if(mod&&e.shiftKey&&e.key==='S'){e.preventDefault();syncToGH();}
+});
+
+/* ── TOAST ── */
+let _toastTimer;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>el.classList.remove('on'),2000);}
+
+/* ── BOOT ── */
+boot();
+</script>
+</body>
+</html>

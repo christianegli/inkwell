@@ -335,8 +335,9 @@ label.fl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:
   <button class="ws-btn"        data-ws="write"   onclick="switchWS('write')">Write</button>
   <button class="ws-btn"        data-ws="edit"    onclick="switchWS('edit')">Edit</button>
   <div id="topbar-right">
+    <span id="focus-ind" style="display:none;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent2);padding:3px 8px;background:rgba(124,58,237,.15);border-radius:4px">Focus</span>
     <span id="wordcount-badge">0 / 0 words</span>
-    <span id="proj-name">Untitled Project</span>
+    <span id="proj-name" style="cursor:pointer" onclick="renameProjPrompt()" title="Click to rename">Untitled Project</span>
     <button class="tb-btn" onclick="openStats()" title="Stats">📊</button>
     <button class="tb-btn" onclick="toggleDark()" title="Theme">◐</button>
     <button class="tb-btn" onclick="syncToGH()" title="Sync to GitHub (⌘⇧S)">↑</button>
@@ -825,6 +826,7 @@ function renderAll() {
   renderSidebar();
   renderIdeas();
   document.getElementById('proj-name').textContent = P.title||'Untitled';
+  document.title = (P.title||'Inkwell')+' — Inkwell';
 }
 
 function updateWordBadge() {
@@ -1342,27 +1344,45 @@ function renderWritePanel() {
   else {
     const scenes=allScenes();
     if(scenes.length) loadSceneIntoEditor(scenes[0].id);
+    else showWriteEmpty();
   }
+}
+function showWriteEmpty(){
+  document.getElementById('we-title').value='';
+  we_ta.value='';
+  we_ov.innerHTML='';
+  document.getElementById('we-beat').style.display='none';
+  document.getElementById('wm-pov').textContent='—';
+  document.getElementById('wm-sc').textContent='—';
+  document.getElementById('wm-wc').textContent='0';
+  document.getElementById('wm-target').textContent='';
+  document.getElementById('wm-sess-wc').textContent='0';
 }
 
 function renderWriteSceneList() {
   const el=document.getElementById('write-scene-list');
   let html='';
   (P.outline.acts||[]).forEach((act,ai)=>{
-    html+=`<div style="padding:5px 4px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--fg2)">Act ${act.number||ai+1}</div>`;
+    html+=`<div style="padding:8px 4px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--fg2)">Act ${act.number||ai+1}: ${esc(act.title||'')}</div>`;
     (act.chapters||[]).forEach((ch,ci)=>{
-      html+=`<div style="padding:4px 4px 2px;font-size:11px;font-weight:600;color:var(--fg2)">${esc(ch.title||`Ch ${ci+1}`)}</div>`;
+      html+=`<div style="padding:5px 4px 2px 8px;font-size:11px;font-weight:600;color:var(--fg);border-left:2px solid var(--border);margin-left:4px">${esc(ch.title||`Ch ${ci+1}`)}</div>`;
       (ch.scenes||[]).forEach(sc=>{
         const sw=P.scenes[sc.id]?.wordCount||0;
-        html+=`<div class="sb-item scene${_selScene===sc.id?' active':''}" onclick="selectScene('${sc.id}')">
-          <span style="width:6px;height:6px;border-radius:50%;background:${STATUS_COLORS[sc.status]||'#94a3b8'};flex-shrink:0;display:inline-block"></span>
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(sc.title||'Untitled')}</span>
-          <span class="sb-wc">${sw?sw+'w':''}</span>
+        const tgt=sc.wordTarget||1200;
+        const pct=Math.min(100,Math.round(sw/tgt*100));
+        const isActive=_selScene===sc.id;
+        html+=`<div class="sb-item scene${isActive?' active':''}" onclick="selectScene('${sc.id}')" style="flex-direction:column;align-items:flex-start;padding:6px 8px 5px 18px;gap:3px">
+          <div style="display:flex;align-items:center;gap:6px;width:100%">
+            <span style="width:6px;height:6px;border-radius:50%;background:${STATUS_COLORS[sc.status]||'#94a3b8'};flex-shrink:0"></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;font-size:12px">${esc(sc.title||'Untitled')}</span>
+            <span style="font-size:10px;color:${isActive?'rgba(255,255,255,.6)':'var(--fg2)'}">${sw?sw+'w':''}</span>
+          </div>
+          ${sw>0?`<div style="width:100%;height:2px;background:rgba(128,128,128,.2);border-radius:1px;overflow:hidden;margin-left:12px"><div style="height:100%;width:${pct}%;background:${pct>=100?'#10b981':STATUS_COLORS[sc.status]||'var(--accent)'};border-radius:1px"></div></div>`:''}
         </div>`;
       });
     });
   });
-  el.innerHTML=html||'<div style="padding:8px 4px;font-size:12px;color:var(--fg2)">No scenes yet.</div>';
+  el.innerHTML=html||'<div style="padding:12px 8px;font-size:12px;color:var(--fg2)">No scenes. Go to Outline to add structure.</div>';
 }
 
 function selectScene(id) {
@@ -1387,23 +1407,40 @@ function loadSceneIntoEditor(id) {
   updateOv();
   updateWriteMeta();
   updateBeatCheck(scDef);
-  _sessionWords=0;
   _lastWC=scData.wordCount||0;
+  startSessionTimer();
+  setTimeout(()=>we_ta.focus(),80);
 }
 
 function updateWriteMeta() {
   const scDef=findScene(_selScene)||{};
-  const scData=P.scenes[_selScene]||{};
   document.getElementById('wm-pov').textContent=scDef.pov||'—';
   document.getElementById('wm-sc').textContent=scDef.title||'—';
   const wcount=wc(we_ta.value);
   document.getElementById('wm-wc').textContent=wcount.toLocaleString();
   const tgt=scDef.wordTarget||1200;
-  document.getElementById('wm-target').textContent=` / ${tgt}`;
+  const pct=Math.min(100,Math.round(wcount/tgt*100));
+  document.getElementById('wm-target').textContent=` / ${tgt} (${pct}%)`;
   document.getElementById('wm-sess-wc').textContent=_sessionWords.toLocaleString();
   const total=totalWords();
-  document.getElementById('wf-total').textContent=`Project: ${total.toLocaleString()} words`;
+  document.getElementById('wf-total').textContent=`${total.toLocaleString()} total words`;
   updateWordBadge();
+}
+
+// Session timer
+let _sessTimerInterval=null;
+function startSessionTimer(){
+  _sessionStart=Date.now(); _sessionWords=0;
+  if(_sessTimerInterval) clearInterval(_sessTimerInterval);
+  _sessTimerInterval=setInterval(()=>{
+    const secs=Math.floor((Date.now()-_sessionStart)/1000);
+    const m=Math.floor(secs/60), s=secs%60;
+    const el=document.getElementById('wf-session');
+    if(el) el.textContent=`${m}:${String(s).padStart(2,'0')} session`;
+  },1000);
+}
+function stopSessionTimer(){
+  if(_sessTimerInterval){clearInterval(_sessTimerInterval);_sessTimerInterval=null;}
 }
 
 function updateBeatCheck(scDef) {
@@ -1457,7 +1494,7 @@ function setupEditor() {
     const diff=curr-_lastWC; _sessionWords+=Math.max(0,diff); _lastWC=curr;
     if(_selScene&&P.scenes[_selScene]){P.scenes[_selScene].wordCount=curr;P.scenes[_selScene].updated=Date.now();}
     updateWriteMeta(); markDirty();
-    if(_focusMode) schedTW();
+    schedTW();
   });
   we_ta.addEventListener('keydown',e=>{
     const mod=e.metaKey||e.ctrlKey;
@@ -1536,23 +1573,37 @@ function toggleFocusMode(){
   document.getElementById('we-col').style.paddingBottom=_focusMode?'60vh':'120px';
   updateOv();
   if(_focusMode) twScroll();
-  toast(_focusMode?'Focus mode on':'Focus mode off');
+  // show/hide focus indicator
+  const ind=document.getElementById('focus-ind');
+  if(ind) ind.style.display=_focusMode?'block':'none';
+  toast(_focusMode?'Focus — ⌘F to exit':'Focus off');
 }
 function twScroll(){
+  // Measure caret position within we-col scroll container
+  const col=document.getElementById('we-col');
+  const colRect=col.getBoundingClientRect();
   const pos=we_ta.selectionStart;
   const text=we_ta.value.substring(0,pos);
   const clone=document.createElement('div');
-  Object.assign(clone.style,{position:'absolute',visibility:'hidden',fontFamily:getComputedStyle(we_ta).fontFamily,fontSize:getComputedStyle(we_ta).fontSize,lineHeight:getComputedStyle(we_ta).lineHeight,whiteSpace:'pre-wrap',wordWrap:'break-word',width:we_ta.offsetWidth+'px',padding:'0'});
+  Object.assign(clone.style,{
+    position:'fixed',visibility:'hidden',pointerEvents:'none',
+    fontFamily:getComputedStyle(we_ta).fontFamily,
+    fontSize:getComputedStyle(we_ta).fontSize,
+    lineHeight:getComputedStyle(we_ta).lineHeight,
+    whiteSpace:'pre-wrap',wordWrap:'break-word',
+    width:we_ta.offsetWidth+'px',
+    left:colRect.left+'px',top:colRect.top+'px'
+  });
   clone.textContent=text;
   const cur=document.createElement('span');cur.textContent='|';clone.appendChild(cur);
   document.body.appendChild(clone);
-  const top=cur.getBoundingClientRect().top+window.scrollY;
+  const curTop=cur.getBoundingClientRect().top;
   document.body.removeChild(clone);
-  const col=document.getElementById('we-col');
-  const target=top-col.getBoundingClientRect().top-col.scrollTop - window.innerHeight*0.42;
-  col.scrollTop=Math.max(0,col.scrollTop+target);
+  // Target: cursor at 42% of col height
+  const target=curTop-colRect.top+col.scrollTop-col.clientHeight*0.42;
+  col.scrollTo({top:Math.max(0,target),behavior:_focusMode?'instant':'smooth'});
 }
-function schedTW(){clearTimeout(_twTimer);_twTimer=setTimeout(twScroll,_focusMode?0:150);}
+function schedTW(){clearTimeout(_twTimer);_twTimer=setTimeout(twScroll,_focusMode?0:120);}
 
 /* ── EDIT WORKSPACE ── */
 function renderEdit() {
@@ -1796,6 +1847,15 @@ function scaffoldOutline() {
   allScenes().forEach(sc=>{if(!P.scenes[sc.id])P.scenes[sc.id]={content:'',wordCount:0,created:Date.now(),updated:Date.now()};});
 }
 
+/* ── RENAME PROJECT ── */
+function renameProjPrompt(){
+  const n=prompt('Project title:',P.title||'');
+  if(n===null||!n.trim())return;
+  P.title=n.trim();
+  document.getElementById('proj-name').textContent=P.title;
+  markDirty(); save(true);
+}
+
 /* ── CMD PALETTE ── */
 const CMDS=[
   {l:'Switch to Ideas',    k:'⌘1',fn:()=>switchWS('idea')},
@@ -1833,7 +1893,11 @@ function cmdKey(e){
 function openMo(id){document.getElementById(id).classList.add('open');}
 function closeMo(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){document.querySelectorAll('.mo.open').forEach(m=>m.classList.remove('open'));document.getElementById('stats-panel').classList.remove('open');}
+  if(e.key==='Escape'){
+    document.querySelectorAll('.mo.open').forEach(m=>m.classList.remove('open'));
+    document.getElementById('stats-panel').classList.remove('open');
+    if(_focusMode){_focusMode=false;document.getElementById('we-col').style.paddingBottom='120px';updateOv();const ind=document.getElementById('focus-ind');if(ind)ind.style.display='none';}
+  }
   const mod=e.metaKey||e.ctrlKey;
   if(mod&&e.key==='k'){e.preventDefault();openCmd();}
   if(mod&&e.key==='1'){e.preventDefault();switchWS('idea');}
@@ -1843,6 +1907,11 @@ document.addEventListener('keydown',e=>{
   if(mod&&e.key==='5'){e.preventDefault();switchWS('edit');}
   if(mod&&e.key==='s'&&!e.shiftKey){e.preventDefault();save();}
   if(mod&&e.shiftKey&&e.key==='S'){e.preventDefault();syncToGH();}
+  // Idea board shortcut
+  const active=document.querySelector('.mo.open');
+  if(!active&&_ws==='idea'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'&&e.key==='n'){
+    e.preventDefault(); openIdeaMo();
+  }
 });
 
 /* ── TOAST ── */

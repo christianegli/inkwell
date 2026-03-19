@@ -1128,7 +1128,7 @@ function renderOutlineForm(sc) {
   const chars = (P.codex.characters||[]).map(c=>`<option value="${esc(c.name)}"${sc.pov===c.name?'selected':''}>${esc(c.name)}</option>`).join('');
   const locs = (P.codex.locations||[]).map(l=>`<option value="${esc(l.name)}"${sc.location===l.name?'selected':''}>${esc(l.name)}</option>`).join('');
   const statusOpts = ['not-started','drafting','drafted','revised','final'].map(s=>`
-    <div class="ss-opt" style="background:${_selOutlineScene&&sc.status===s?STATUS_COLORS[s]+'33':'transparent'};color:${STATUS_COLORS[s]};border-color:${sc.status===s?STATUS_COLORS[s]:STATUS_COLORS[s]+'55'}" onclick="setSceneStatus('${sc.id}','${s}')">${s.replace('-',' ')}</div>
+    <div class="ss-opt" data-status="${s}" style="background:${sc.status===s?STATUS_COLORS[s]+'33':'transparent'};color:${STATUS_COLORS[s]};border-color:${sc.status===s?STATUS_COLORS[s]:STATUS_COLORS[s]+'55'}" onclick="setSceneStatus('${sc.id}','${s}')">${s.replace('-',' ')}</div>
   `).join('');
   const intDots = Array.from({length:10},(_,i)=>`<div class="int-dot${(sc.intensity||5)>i?' on':''}" onclick="setIntensity('${sc.id}',${i+1})" title="${i+1}"></div>`).join('');
 
@@ -1179,16 +1179,20 @@ function setSceneStatus(id,status) {
   if(P.scenes[id])P.scenes[id].status=status;
   markDirty(); renderOutlineList(); renderArcChart();
   // re-render form status buttons
-  const btn=document.querySelectorAll('.ss-opt');
-  btn.forEach(b=>{ const s=b.textContent.replace(' ','-'); b.style.background=s===status?STATUS_COLORS[status]+'33':'transparent'; b.style.borderColor=s===status?STATUS_COLORS[status]:STATUS_COLORS[status]+'55'; });
+  document.querySelectorAll('.ss-opt').forEach(b=>{
+    const s=b.dataset.status||b.textContent.trim().replace(/\s+/g,'-');
+    const isActive=s===status;
+    b.style.background=isActive?STATUS_COLORS[status]+'33':'transparent';
+    b.style.borderColor=isActive?STATUS_COLORS[status]:STATUS_COLORS[status]+'55';
+  });
 }
 function setIntensity(id,val) {
   const sc=findScene(id); if(!sc)return;
   sc.intensity=val; markDirty();
-  // re-render dots
   document.querySelectorAll('.int-dot').forEach((d,i)=>d.classList.toggle('on',i<val));
-  // update label
-  const lbl=document.querySelector('.od-label[onclick=""]'); // fallback
+  // update the label that shows the current value
+  const lbls=document.querySelectorAll('.od-label');
+  lbls.forEach(l=>{ if(l.textContent.startsWith('Intensity')) l.textContent=`Intensity (${val}/10)`; });
   renderArcChart();
 }
 

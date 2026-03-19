@@ -20,6 +20,12 @@
   --sz:19px;--lh:1.85;
   --topbar:48px;--sbw:260px;
 }
+/* Progress bar in topbar */
+#proj-progress{
+  height:2px;position:fixed;top:var(--topbar);left:0;right:0;
+  background:var(--accent);z-index:99;
+  transform-origin:left;transition:transform .4s ease;
+}
 [data-theme=dark]{
   --bg:#0d0f17;--bg2:#111827;--bg3:#1e2537;
   --fg:#e2e8f0;--fg2:#94a3b8;--fg3:#475569;
@@ -208,11 +214,12 @@ body{font-family:var(--font);font-size:14px;color:var(--fg);background:var(--bg)
 #we-ta,#we-ov{
   font-family:var(--font);font-size:var(--sz);line-height:var(--lh);
   white-space:pre-wrap;word-wrap:break-word;width:100%;
-  padding:0;border:none;outline:none;background:transparent;display:block
+  padding:0;border:none;outline:none;background:transparent;display:block;
+  letter-spacing:0.01em
 }
 #we-ta{color:transparent;caret-color:var(--fg);resize:none;overflow:hidden;position:relative;z-index:2;min-height:400px;-webkit-font-smoothing:antialiased}
 #we-ta::selection{background:rgba(124,58,237,.2)}
-#we-ov{position:absolute;top:40px;left:24px;right:24px;color:var(--fg);pointer-events:none;z-index:1}
+#we-ov{position:absolute;top:0;left:0;right:0;color:var(--fg);pointer-events:none;z-index:1}
 #we-beat{
   border:1px solid var(--border);border-radius:8px;padding:12px 16px;
   margin-bottom:20px;background:var(--bg2);font-size:12px
@@ -325,6 +332,9 @@ label.fl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:
 </style>
 </head>
 <body>
+
+<!-- Progress bar -->
+<div id="proj-progress" style="transform:scaleX(0)"></div>
 
 <!-- TOP BAR -->
 <div id="topbar">
@@ -446,9 +456,9 @@ label.fl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:
               <div class="beat-row"><span class="beat-label">Outcome</span><span class="beat-val" id="wb-outcome">—</span></div>
             </div>
             <input id="we-title" placeholder="Scene title…" oninput="sceneMetaChange()">
-            <div style="position:relative">
-              <div id="we-ov" aria-hidden="true"></div>
+            <div style="position:relative;min-height:400px">
               <textarea id="we-ta" placeholder="Write this scene…" autocomplete="off" autocorrect="on" spellcheck="true"></textarea>
+              <div id="we-ov" aria-hidden="true"></div>
             </div>
           </div>
           <div id="write-footer">
@@ -832,8 +842,11 @@ function renderAll() {
 function updateWordBadge() {
   if (!P) return;
   const tw = totalWords();
-  const pct = P.targetWords ? Math.round(tw/P.targetWords*100) : 0;
-  document.getElementById('wordcount-badge').textContent = `${tw.toLocaleString()} / ${(P.targetWords||0).toLocaleString()} words (${pct}%)`;
+  const pct = P.targetWords ? Math.min(100,tw/P.targetWords) : 0;
+  const pctDisplay = Math.round(pct*100);
+  document.getElementById('wordcount-badge').textContent = `${tw.toLocaleString()} / ${(P.targetWords||0).toLocaleString()} words · ${pctDisplay}%`;
+  const bar = document.getElementById('proj-progress');
+  if (bar) bar.style.transform = `scaleX(${pct})`;
 }
 
 /* ── SIDEBAR ── */
@@ -1552,10 +1565,11 @@ function updateOv(){
   lines.forEach(l=>{
     const es=escHTML(l);
     let rendered;
-    if(/^# /.test(l)) rendered=`<span style="font-size:1.35em;font-weight:700;color:var(--fg)">${inlineMD(es)}</span>`;
-    else if(/^## /.test(l)) rendered=`<span style="font-size:1.15em;font-weight:700;color:var(--fg)">${inlineMD(es)}</span>`;
-    else if(/^### /.test(l)) rendered=`<span style="font-size:1.05em;font-weight:600;color:var(--fg)">${inlineMD(es)}</span>`;
-    else if(/^> /.test(l)) rendered=`<span style="color:var(--fg2);border-left:2px solid var(--fg3);padding-left:12px;display:block">${inlineMD(es)}</span>`;
+    if(/^# /.test(l))       rendered=`<span style="font-size:1.35em;font-weight:700">${inlineMD(es)}</span>`;
+    else if(/^## /.test(l)) rendered=`<span style="font-size:1.18em;font-weight:700">${inlineMD(es)}</span>`;
+    else if(/^### /.test(l))rendered=`<span style="font-size:1.06em;font-weight:600">${inlineMD(es)}</span>`;
+    else if(/^> /.test(l))  rendered=`<span style="color:var(--fg2);border-left:2px solid var(--fg3);padding-left:12px;display:block">${inlineMD(es)}</span>`;
+    else if(/^---+$/.test(l.trim())) rendered=`<span style="display:block;border-top:1px solid var(--fg3);margin:4px 0">${es}</span>`;
     else rendered=inlineMD(es);
     if(_focusMode){
       const inP=isInCurPara(pos,pos+l.length);
@@ -1565,6 +1579,7 @@ function updateOv(){
     pos+=l.length+1;
   });
   we_ov.innerHTML=html;
+  we_ov.style.height=we_ta.scrollHeight+'px';
 }
 
 /* ── FOCUS + TYPEWRITER ── */

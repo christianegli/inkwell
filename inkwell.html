@@ -489,6 +489,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(
 <div class="mo" id="mo-export" onclick="moOut(event,'mo-export')">
   <div class="mbox">
     <h3>Export</h3>
+    <button class="eo" onclick="doExport('print')" style="border-color:var(--accent);color:var(--accent);font-weight:600">⬇ Print / Save as PDF — 5 literary themes</button>
     <button class="eo" onclick="doExport('copy-md')">Copy Markdown</button>
     <button class="eo" onclick="doExport('copy-html')">Copy HTML</button>
     <button class="eo" onclick="doExport('dl-md')">Download .md file</button>
@@ -1396,12 +1397,63 @@ function pickDoc(id){closeMo('mo-open');loadDoc(id)}
 function openExport(){openMo('mo-export')}
 function doExport(mode){
   const md=ta.value;
-  const title=docTitle(md).replace(/[^a-z0-9]/gi,'_').toLowerCase()||'prose';
-  if(mode==='copy-md'){navigator.clipboard.writeText(md);toast('Markdown copied');}
-  else if(mode==='copy-html'){navigator.clipboard.writeText(mdToHtml(md));toast('HTML copied');}
-  else if(mode==='dl-md'){dlFile(md,'text/markdown',title+'.md');}
-  else if(mode==='dl-html'){dlFile(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(docTitle(md))}</title></head><body style="max-width:680px;margin:60px auto;font-family:Georgia,serif;font-size:20px;line-height:1.9;color:#1a1a1a;padding:0 24px">${mdToHtml(md)}</body></html>`,'text/html',title+'.html');}
+  const title=docTitle(md).replace(/[^a-z0-9]/gi,'_').toLowerCase()||'inkwell';
+  if(mode==='copy-md'){navigator.clipboard.writeText(buildFullManuscriptMD());toast('Manuscript copied');}
+  else if(mode==='copy-html'){navigator.clipboard.writeText(mdToHtml(buildFullManuscriptMD()));toast('HTML copied');}
+  else if(mode==='dl-md'){dlFile(buildFullManuscriptMD(),'text/markdown',title+'.md');}
+  else if(mode==='dl-html'){dlFile(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(IK?IK.title||'Manuscript':'Manuscript')}</title></head><body style="max-width:680px;margin:60px auto;font-family:Georgia,serif;font-size:20px;line-height:1.9;color:#1a1a1a;padding:0 24px">${mdToHtml(buildFullManuscriptMD())}</body></html>`,'text/html',title+'.html');}
+  else if(mode==='print'){openPrintExport();}
   closeMo('mo-export');
+}
+function buildFullManuscriptMD(){
+  if(!IK)return ta.value;
+  // Group scenes by chapter
+  const byChapter={};
+  (IK.scenes||[]).forEach(sc=>{
+    const ch=sc.chapter||'';
+    if(!byChapter[ch])byChapter[ch]=[];
+    byChapter[ch].push(sc);
+  });
+  let out='';
+  Object.keys(byChapter).forEach((ch,ci)=>{
+    if(ch) out+=`# ${ch}\n\n`;
+    byChapter[ch].forEach((sc,si)=>{
+      if(sc.title&&sc.title!=='Scene '+(si+1)) out+=`## ${sc.title}\n\n`;
+      out+=(sc.content||'')+'\n\n';
+    });
+  });
+  return out.trim();
+}
+function openPrintExport(){
+  if(!IK){
+    // Prose mode fallback
+    const job={title:docTitle(ta.value)||'Untitled',author:'',genre:'',chapters:[{title:docTitle(ta.value),chapterLabel:'',number:false,content:ta.value}]};
+    localStorage.setItem('inkwell_print_job',JSON.stringify(job));
+    window.open('/inkwell/print.html','_blank');
+    return;
+  }
+  // Group scenes into chapters
+  const byChapter={};
+  const chapterOrder=[];
+  (IK.scenes||[]).forEach(sc=>{
+    const ch=sc.chapter||'';
+    if(!byChapter[ch]){byChapter[ch]=[];chapterOrder.push(ch);}
+    byChapter[ch].push(sc);
+  });
+  const chapters=chapterOrder.map((ch,ci)=>({
+    title:ch||'',
+    chapterLabel:ch?ch:('Chapter '+(ci+1)),
+    number:!ch,
+    content:byChapter[ch].map(sc=>{
+      let c='';
+      if(sc.title&&sc.title!=='Scene '+(byChapter[ch].indexOf(sc)+1)) c+=`## ${sc.title}\n\n`;
+      c+=(sc.content||'');
+      return c;
+    }).join('\n\n---\n\n')
+  }));
+  const job={title:IK.title||'Untitled',author:'',genre:IK.genre||'',chapters};
+  localStorage.setItem('inkwell_print_job',JSON.stringify(job));
+  window.open('/inkwell/print.html','_blank');
 }
 function dlFile(content,type,name){
   const a=document.createElement('a');

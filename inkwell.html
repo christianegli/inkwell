@@ -402,20 +402,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(
 #ai-notif:hover{border-color:var(--accent);color:var(--fg)}
 .ai-notif-spark{color:var(--accent);margin-right:4px}
 
-/* ── OPENING INVITATION ── */
-#invite{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:40px;transition:opacity .6s ease,visibility .6s ease}
-#invite.hidden{opacity:0;visibility:hidden;pointer-events:none}
-#invite-inner{max-width:560px;width:100%;text-align:center}
-#invite-q{font-family:var(--font);font-size:clamp(20px,3vw,28px);line-height:1.5;color:var(--fg);font-weight:400;margin-bottom:40px;min-height:80px;transition:opacity .5s ease}
-#invite-q.fade{opacity:0}
-#invite-input{width:100%;background:transparent;border:none;border-bottom:2px solid var(--fg3);padding:12px 0;font-family:var(--font);font-size:clamp(16px,2.5vw,21px);color:var(--fg);outline:none;text-align:center;transition:border-color .3s;line-height:1.6}
-#invite-input:focus{border-bottom-color:var(--accent)}
-#invite-hint{font-size:12px;color:var(--fg3);margin-top:16px;opacity:.6;transition:opacity .3s}
-#invite-skip{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);background:none;border:none;font-family:var(--font);font-size:11px;color:var(--fg3);cursor:pointer;padding:4px 12px;border-radius:4px;transition:color .15s;letter-spacing:.06em;text-transform:uppercase}
-#invite-skip:hover{color:var(--fg2)}
-#invite-progress{display:flex;gap:6px;justify-content:center;margin-top:28px}
-.invite-dot{width:6px;height:6px;border-radius:50%;background:var(--fg3);transition:background .3s}
-.invite-dot.active{background:var(--accent)}
+
 
 /* ── AI REVIEW OVERLAY (extracted entities) ── */
 #ai-review{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg);border:1px solid var(--fg3);border-radius:12px;width:460px;max-width:calc(100vw - 32px);max-height:70vh;overflow-y:auto;z-index:800;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.15);display:none}
@@ -877,15 +864,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(
 <div id="ai-notif" onclick="openAiReview()"><span class="ai-notif-spark">✦</span><span id="ai-notif-text"></span></div>
 
 <!-- Opening invitation -->
-<div id="invite">
-  <div id="invite-inner">
-    <div id="invite-q"></div>
-    <input id="invite-input" type="text" autocomplete="off" autocorrect="on" autocapitalize="sentences" placeholder="Your answer…">
-    <div id="invite-hint">Press Enter to begin writing</div>
-    <div id="invite-progress"></div>
-  </div>
-  <button id="invite-skip" onclick="skipInvite()">skip →</button>
-</div>
+
 
 <script>
 'use strict';
@@ -3014,106 +2993,20 @@ function outlineGoToScene(id){
   loadScene(id);
 }
 
-/* ── OPENING INVITATION ── */
-const INVITATIONS=[
-  "What is the feeling you want to leave the reader with?",
-  "Who is your protagonist, and what do they want more than anything?",
-  "What scene keeps appearing in your mind?",
-  "What question does this book try to answer?",
-  "Start with a sentence. Any sentence."
-];
-let _invIdx=0,_invTimer=null;
-
-function startInvitation(){
-  const inv=document.getElementById('invite');
-  if(!inv)return;
-  renderInvProgress();
-  showInvQuestion(0);
-  const inp=document.getElementById('invite-input');
-  if(inp){
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='Enter'){
-        e.preventDefault();
-        const v=this.value.trim();
-        if(v){
-          acceptInvitation(v);
-        } else {
-          // cycle question on empty enter
-          nextInvQuestion();
-        }
-      }
-    });
-  }
-  // auto-rotate questions
-  _invTimer=setInterval(()=>{
-    const inp=document.getElementById('invite-input');
-    if(inp&&!inp.value.trim()){
-      nextInvQuestion();
-    }
-  },5000);
-}
-function showInvQuestion(idx){
-  _invIdx=idx;
-  const qEl=document.getElementById('invite-q');
-  if(!qEl)return;
-  qEl.classList.add('fade');
-  setTimeout(()=>{
-    qEl.textContent=INVITATIONS[idx];
-    qEl.classList.remove('fade');
-    renderInvProgress();
-  },400);
-}
-function nextInvQuestion(){
-  showInvQuestion((_invIdx+1)%INVITATIONS.length);
-}
-function renderInvProgress(){
-  const el=document.getElementById('invite-progress');
-  if(!el)return;
-  el.innerHTML=INVITATIONS.map((_,i)=>`<span class="invite-dot${i===_invIdx?' active':''}"></span>`).join('');
-}
-function acceptInvitation(text){
-  clearInterval(_invTimer);
-  // create first scene with this content as beginning
-  let sc=ikCurScene();
-  if(!sc){sc=addScene({title:'Scene 1',status:'inprogress'});}
-  sc.content=text;
-  sc.wordCount=countWords(text);
-  sc.status='inprogress';
-  ikSave();
-  ta.value=text;
-  ta.dispatchEvent(new Event('input'));
-  ta.setSelectionRange(text.length,text.length);
-  dismissInvitation();
-}
-function skipInvite(){
-  clearInterval(_invTimer);
-  // ensure at least one scene exists
-  if(!IK.scenes.length)addScene({title:'Scene 1'});
-  dismissInvitation();
-}
-function dismissInvitation(){
-  const inv=document.getElementById('invite');
-  if(inv){inv.classList.add('hidden');}
-  IK.settings._inviteDismissed=true;
-  ikSave();
-  ta.focus();
-}
+/* ── OPENING — just the blank page ── */
 function checkInvite(){
-  // Show invitation only if book has no content at all
-  const totalContent=IK.scenes.reduce((a,s)=>a+(s.content||'').length,0);
-  if(!IK.settings._inviteDismissed&&totalContent===0){
-    if(!IK.scenes.length)IK.scenes.push({id:'scene_'+Date.now(),title:'Scene 1',chapter:'',status:'unwritten',content:'',wordCount:0,order:0,created:Date.now(),updated:Date.now(),connections:[]});
-    IK_CUR_SCENE=IK.scenes[0].id;
-    setTimeout(startInvitation,600);
-  } else {
-    const inv=document.getElementById('invite');
-    if(inv)inv.classList.add('hidden');
-    if(!IK_CUR_SCENE&&IK.scenes.length)IK_CUR_SCENE=IK.scenes[0].id;
-    const sc=ikCurScene();
-    if(sc)ta.value=sc.content||'';
-    else ta.value='';
-    ta.dispatchEvent(new Event('input'));
+  // No ceremony. Hide invite overlay immediately, load the first scene.
+  const inv=document.getElementById('invite');
+  if(inv)inv.classList.add('hidden');
+  if(!IK.scenes.length){
+    IK.scenes.push({id:'scene_'+Date.now(),title:'Scene 1',chapter:'',status:'unwritten',content:'',wordCount:0,order:0,created:Date.now(),updated:Date.now(),connections:[]});
+    ikSave();
   }
+  if(!IK_CUR_SCENE)IK_CUR_SCENE=IK.scenes[0].id;
+  const sc=ikCurScene();
+  ta.value=sc?sc.content||'':'';
+  ta.dispatchEvent(new Event('input'));
+  if(!ta.value)setTimeout(()=>ta.focus(),80);
 }
 
 /* ── AI PROVIDER ── */

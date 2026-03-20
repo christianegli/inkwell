@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inkwell — Guide</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--fg2:#6b6b6b;--fg3:#ccc;--accent:#7c3aed;--font:'Courier New',Georgia,serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.8}
+.page{max-width:680px;margin:0 auto;padding:60px 24px 100px}
+h1{font-size:1.6em;font-weight:700;margin-bottom:6px}
+.sub{color:var(--fg2);font-size:14px;margin-bottom:52px}
+.section{margin-bottom:64px}
+h2{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--fg2);margin-bottom:20px}
+.item{margin-bottom:28px}
+.item h3{font-size:15px;font-weight:700;margin-bottom:5px}
+.item p{font-size:14px;color:var(--fg2);line-height:1.65}
+.kbd{display:inline-block;background:#f0f0f0;border:1px solid #ddd;border-radius:4px;padding:1px 7px;font-size:11px;font-family:monospace;color:#333}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+td{padding:7px 4px;border-bottom:1px solid #f0f0f0}
+td:first-child{width:150px;font-family:monospace;color:var(--accent)}
+a{color:var(--accent)}
+hr{border:none;border-top:1px solid #f0f0f0;margin:48px 0}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Inkwell</h1>
+  <p class="sub">A novel writing platform — guide</p>
+
+  <div class="section">
+    <h2>Getting started</h2>
+    <div class="item">
+      <h3>Just start writing</h3>
+      <p>Open Inkwell and the page is blank. No setup, no wizard. Write your first sentence. Inkwell builds around what you write — not the other way around.</p>
+    </div>
+    <div class="item">
+      <h3>Scenes</h3>
+      <p>Hover the <strong>left edge</strong> of the screen (or <kbd class="kbd">⌘⇧B</kbd>) to open the scene panel. Your manuscript is a list of scenes — flat, draggable, no forced hierarchy. Click any scene to switch to it. Click the status dot to cycle: unwritten → drafting → drafted → done. Total word count at the bottom.</p>
+    </div>
+    <div class="item">
+      <h3>Notes</h3>
+      <p>Hover the <strong>right edge</strong> (or <kbd class="kbd">⌘⇧N</kbd>) for the scratchpad. Type a note, press Enter to save. Tag with <code>#character</code> <code>#place</code> <code>#idea</code> <code>#todo</code>. Filter by tag. Pin notes to the current scene.</p>
+    </div>
+    <div class="item">
+      <h3>World — characters, places, themes</h3>
+      <p><kbd class="kbd">⌘⇧W</kbd> opens the World panel — characters, places, themes, timeline. All inline editing. If you've configured an AI key, characters detected in your writing appear here automatically with a confidence badge.</p>
+    </div>
+    <div class="item">
+      <h3>Outline</h3>
+      <p><kbd class="kbd">⌘⇧O</kbd> switches to a card grid of all your scenes — preview, status, word count. Drag to reorder. Click to go write.</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <h2>AI — characters, suggestions, analysis</h2>
+    <div class="item">
+      <h3>Connect your API key</h3>
+      <p>Open Settings (<kbd class="kbd">⌘,</kbd>) → AI tab. Paste a key for Claude, ChatGPT, Gemini, or Grok. Stored in your browser only — never transmitted except to the respective API.</p>
+    </div>
+    <div class="item">
+      <h3>Auto-extraction</h3>
+      <p>After each save, Inkwell silently scans your manuscript for character names, places, and recurring themes. If it finds something new, a gentle notification appears: <em>"✦ Found 3 characters — tap to review."</em> You accept, edit, or dismiss each suggestion.</p>
+    </div>
+    <div class="item">
+      <h3>On-demand tools (<kbd class="kbd">⌘K</kbd>)</h3>
+      <p>Open the command palette and search for:</p>
+      <table>
+        <tr><td>Continue scene</td><td>Generates the next paragraph in your style</td></tr>
+        <tr><td>What happens next?</td><td>3 scene ideas based on current scene</td></tr>
+        <tr><td>Tone check</td><td>Describes the emotional register of the scene</td></tr>
+        <tr><td>Find inconsistencies</td><td>Scans all scenes for continuity issues</td></tr>
+        <tr><td>Describe character</td><td>Writes a sketch from what's in the manuscript</td></tr>
+      </table>
+      <p style="margin-top:10px">AI assists. It never rewrites without you asking.</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <h2>GitHub sync</h2>
+    <div class="item">
+      <h3>Save your manuscript to GitHub</h3>
+      <p>Settings (<kbd class="kbd">⌘,</kbd>) → GitHub tab. Enter your Personal Access Token (create at <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">github.com/settings/tokens/new</a> — tick <strong>repo</strong>), repository, and file path. <kbd class="kbd">⌘⇧S</kbd> pushes a full JSON snapshot of your manuscript to GitHub. Free version history.</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <h2>Keyboard shortcuts</h2>
+    <table>
+      <tr><td>⌘S</td><td>Save</td></tr>
+      <tr><td>⌘⇧S</td><td>Sync to GitHub</td></tr>
+      <tr><td>⌘F</td><td>Focus mode — dims everything except current paragraph</td></tr>
+      <tr><td>⌘P</td><td>Preview (rendered markdown)</td></tr>
+      <tr><td>⌘K</td><td>Command palette</td></tr>
+      <tr><td>⌘⇧B</td><td>Scene panel</td></tr>
+      <tr><td>⌘⇧N</td><td>Notes panel</td></tr>
+      <tr><td>⌘⇧W</td><td>World panel</td></tr>
+      <tr><td>⌘⇧O</td><td>Outline view</td></tr>
+      <tr><td>⌘⇧I</td><td>Annotations panel</td></tr>
+      <tr><td>⌘⇧A</td><td>Annotate selected text</td></tr>
+      <tr><td>⌘,</td><td>Settings</td></tr>
+      <tr><td>⌘E</td><td>Export (.md / .html)</td></tr>
+      <tr><td>F11</td><td>Fullscreen</td></tr>
+      <tr><td>⌘I</td><td>Document stats</td></tr>
+      <tr><td>⌃T</td><td>Pin/unpin toolbar</td></tr>
+    </table>
+  </div>
+
+  <p style="font-size:12px;color:var(--fg3);padding-top:8px">
+    <a href="/inkwell/inkwell.html">← Back to Inkwell</a> &nbsp;·&nbsp; <a href="/prose/guide.html">Prose guide</a>
+  </p>
+</div>
+</body>
+</html>
